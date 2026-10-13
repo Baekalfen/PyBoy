@@ -37,7 +37,9 @@ def doctest_fixtures(request, doctest_namespace, default_rom, default_boot_rom):
     # The ROM fixtures are only resolved for the names the page actually
     # uses, so pages without ROMs run without the secrets. The secrets
     # fixture skips, if the ROMs cannot be decrypted.
-    text = request.node.path.read_text()
+    # The wiki pages are UTF-8; the platform default encoding cannot read
+    # them on Windows.
+    text = request.node.path.read_text(encoding="utf-8")
     missing = []
     for name in WIKI_ROMS:
         if name in text:
@@ -69,7 +71,14 @@ def doctest_fixtures(request, doctest_namespace, default_rom, default_boot_rom):
     doctest_namespace["pyboy"] = pyboy
     doctest_namespace["PyBoy"] = mock_PyBoy
 
-    yield None
+
+def pytest_sessionfinish(session, exitstatus):
+    # The wiki examples record GIFs that belong in the documentation assets.
+    # The move happens at session finish, when every emulator has closed its
+    # recordings: a per-test move races with parallel workers still writing
+    # their own GIFs, and Windows refuses to rename a file that is open.
+    if exitstatus != 0 or hasattr(session.config, "workerinput"):
+        return
 
     recordings = Path.cwd() / "recordings"
     assets = WIKI_DIR / "assets"

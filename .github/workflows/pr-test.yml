@@ -12,6 +12,7 @@ jobs:
   test_cython:
     name: Cython
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -56,26 +57,13 @@ jobs:
       run: |
         sudo apt update
         sudo apt install libopengl0 freeglut3-dev ffmpeg libogg-dev -y
-    - name: Run Doctest
-      if: ${{ !contains(matrix.os, 'windows') }}
-      env:
-        PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
-      run: |
-        python -m pytest pyboy/ docs/ -v
     - name: Run PyTest
       env:
         PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
         TEST_VERBOSE_IMAGES: 0
         TEST_NO_UI: 1
       run: |
-        ${{ ((matrix.os != 'windows-latest') && 'timeout 5m ') || ''}} python -m pytest tests/ -n auto -v --benchmark-disable
-    - name: Run PyTest Benchmark
-      env:
-        PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
-        TEST_VERBOSE_IMAGES: 0
-        TEST_NO_UI: 1
-      run: |
-        python -m pytest tests/test_benchmark.py --benchmark-enable --benchmark-min-rounds=10
+        ${{ ((matrix.os != 'windows-latest') && 'timeout 10m ') || ''}} python -m pytest tests/ pyboy/ docs/ -n auto -v --benchmark-disable
     - name: Build wheel
       if: ${{ github.event_name == 'release' && github.event.action == 'published' && !github.event.release.prerelease && !contains(matrix.os, 'ubuntu') }}
       env:
@@ -103,6 +91,7 @@ jobs:
   test_pypy:
     name: PyPy
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
@@ -114,7 +103,8 @@ jobs:
       if: ${{ contains(matrix.os, 'macos-latest') }}
       run: |
         # Fix cryptography build: https://github.com/pyca/cryptography/issues/3489
-        brew install openssl ffmpeg
+        # Install 'timeout' command
+        brew install openssl ffmpeg coreutils
         echo "CPPFLAGS=-I/usr/local/opt/openssl/include" >> $GITHUB_ENV
         echo "LDFLAGS=-L/usr/local/opt/openssl/lib" >> $GITHUB_ENV
     - name: Setup Ubuntu - OpenGL dependencies
@@ -133,23 +123,18 @@ jobs:
         pypy3 -m pip install wheel
         pypy3 -m pip install --prefer-binary -r requirements.txt
         pypy3 -m pip install --prefer-binary -r requirements_tests.txt
-    - name: Doctest
-      if: ${{ !contains(matrix.os, 'windows') }}
-      env:
-        PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
-      run: |
-        pypy3 -m pytest pyboy/ docs/ -v
     - name: Run PyTest
       env:
         PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
         TEST_VERBOSE_IMAGES: 0
         TEST_NO_UI: 1
       run: |
-        pypy3 -m pytest tests/ -n auto -v --benchmark-disable
+        ${{ ((matrix.os != 'windows-latest') && 'timeout 90m ') || ''}} pypy3 -m pytest tests/ pyboy/ docs/ -n auto -v --benchmark-disable
 
   test_manylinux:
     name: ManyLinux
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -209,13 +194,10 @@ jobs:
           echo "Building PyBoy"
           python setup.py build_ext -j $(getconf _NPROCESSORS_ONLN) --inplace
 
-          echo "Starting Doctests"
-          PYTEST_SECRETS_KEY=${{ secrets.PYTEST_SECRETS_KEY }} python -m pytest pyboy/ docs/ -v
-
           echo "Starting pytests"
-          PYTEST_SECRETS_KEY=${{ secrets.PYTEST_SECRETS_KEY }} TEST_NO_UI=1 python -m pytest tests/ -n auto -v --benchmark-disable
+          PYTEST_SECRETS_KEY=${{ secrets.PYTEST_SECRETS_KEY }} TEST_NO_UI=1 timeout 600 python -m pytest tests/ pyboy/ docs/ -n auto -v --benchmark-disable
 
-          if [[ ${{ github.event_name == 'release' && github.event.action == 'published' && !github.event.release.prerelease }} ]]; then
+          if [[ "${{ github.event_name == 'release' && github.event.action == 'published' && !github.event.release.prerelease }}" == "true" ]]; then
             echo "Building wheel"
             python -m pip install wheel
             python setup.py sdist bdist_wheel

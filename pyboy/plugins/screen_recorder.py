@@ -127,7 +127,7 @@ class ScreenRecorder(PyBoyPlugin):
             logger.error("Screen recording failed: no frames")
 
         if success:
-            logger.info("Screen recording saved in %s", session["output_path"])
+            logger.info("Screen recording saved in %s", session["output_path"].replace(os.sep, "/"))
         self._cleanup_session(session)
         self._session = None
         self.recording_gif = False

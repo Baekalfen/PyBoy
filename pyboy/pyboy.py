@@ -1095,10 +1095,12 @@ class PyBoy:
         You can either load it from a file, or from memory. See `PyBoy.save_state` for how to save the state, before you
         can load it here.
 
-        To load a file, remember to load it as bytes:
+        To load a file, remember to load it as bytes. The state file is prepared with `PyBoy.save_state`:
         ```python
         >>> # Load file
-        >>> with open("state_file.state", "rb") as f:
+        >>> with open("state_file2.state", "wb") as f:
+        ...     pyboy.save_state(f)
+        >>> with open("state_file2.state", "rb") as f:
         ...     pyboy.load_state(f)
         >>>
         ```
