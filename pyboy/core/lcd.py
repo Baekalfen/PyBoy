@@ -281,16 +281,21 @@ class LCD:
         if (
             not self._is_cgb_hardware()
             and self._LCDC.lcd_enable
+            and self.renderer.dot_ly == self.LY
+            and (self._STAT._mode == 3 or self._STAT._mode == 0)
+        ):
+            # A mid-scanline BGP write first becomes visible 13 dots after
+            # the write dot (see dot_bgp_ring). The burst fast path may only
+            # shade pixels with the live palette once every sample that the
+            # delayed shading can still read has been rewritten with the
+            # settled value, 16 dots after the write
+            self.renderer.dot_bgp_change_dot = self.renderer.dot_dots_elapsed
+        if (
+            not self._is_cgb_hardware()
+            and self._LCDC.lcd_enable
             and (
-                (
-                    self._STAT._mode == 2
-                    and self.clock + (cpu_cycles - self.last_cycles) == self.clock_target
-                )
-                or (
-                    self._STAT._mode == 3
-                    and self.renderer.dot_ly == self.LY
-                    and self.renderer.dot_dots_elapsed == 0
-                )
+                (self._STAT._mode == 2 and self.clock + (cpu_cycles - self.last_cycles) == self.clock_target)
+                or (self._STAT._mode == 3 and self.renderer.dot_ly == self.LY and self.renderer.dot_dots_elapsed == 0)
             )
         ):
             # A BGP write landing on or just before the line's
@@ -1246,6 +1251,8 @@ class Renderer:
         self.stop_vram_blocked = False
         self.dot_bgp_mode3_old = 0
         self.dot_bgp_mode3_new = 0
+        self.dot_bgp_preline_or = False
+        self.dot_bgp_change_dot = -1000
         self.dot_objsize_prev = False
         self.dot_objsize_reg = False
         self.dot_tdsel_prev = False
@@ -1568,6 +1575,8 @@ class Renderer:
         self.dot_bgp_mode3_write = False
         self.dot_bgp_mode3_old = 0
         self.dot_bgp_mode3_new = 0
+        self.dot_bgp_preline_or = False
+        self.dot_bgp_change_dot = -1000
         self.dot_objsize_prev = False
         self.dot_objsize_reg = False
         self.dot_tdsel_prev = False
@@ -1614,6 +1623,8 @@ class Renderer:
         self.dot_mode0_corrected = -1
         self.dot_mode0_fetcher_based = False
         self.dot_win_glitch_blocked = False
+        self.dot_bgp_preline_or = False
+        self.dot_bgp_change_dot = -1000
         self.dot_bg_fifo_count = 0
         self.dot_bg_fifo_read = 0
         self.dot_obj_fifo_count = 0
@@ -1677,6 +1688,78 @@ class Renderer:
         if self.dot_ly < 0 or self.dot_x_counter == 160:
             return
         while self.dot_dots_elapsed < target:
+            # Fast path: a run of plain dots with nothing special due. Within
+            # one call, register writes have already landed (they sync the
+            # LCD first), so if every register has been stable for at least
+            # one dot, the per-dot sampling collapses to constants and the
+            # dots can be processed in bulk. See _advance_dots_burst.
+            if (
+                self.dot_bg_fifo_count > 0
+                and self.dot_obj_fifo_count == 0
+                and self.dot_sprite_session_dots == 0
+                and self.dot_session_bg_steps == 0
+                and not self.dot_during_sprite_fetch
+                and not self.dot_sprite_merge_pending
+                and not self.dot_bg_insert_pending
+                and not self.dot_window_extra_dot_pending
+                and not self.dot_mixer_stalled
+                and self.dot_wx_changed_dots == 0
+                and self.dot_tiledata_glitch_dots == 0
+                and not self.dot_cgb_window_glitch
+                and 0 <= self.dot_x_counter < 160
+                and self.dot_dots_elapsed != 0
+                and self.dot_dots_elapsed - self.dot_bgp_change_dot >= 16
+                and not (self.dot_bgp_preline_or and self.dot_dots_elapsed < 44)
+                and self.dot_wen_cur == self.lcd._LCDC.window_enable
+                and self.dot_wx_prev == self.lcd.WX
+                and self.dot_scy_prev == self.lcd.SCY
+                and self.dot_objsize_prev == self.lcd._LCDC.sprite_height
+                and self.dot_tdsel_prev == self.lcd._LCDC.tiledata_select
+                and not (self.dot_window_triggered and not self.lcd._LCDC.window_enable)
+                and not (self.wy_activated_frame and not self.lcd._LCDC.window_enable)
+                and not self.lcd.cgb
+                and not self.lcd._is_cgb_hardware()
+            ):
+                limit = target - self.dot_dots_elapsed
+                if limit > 160 - self.dot_x_counter:
+                    limit = 160 - self.dot_x_counter
+                window_enable = self.lcd._LCDC.window_enable
+                may_activate = self.wy_activated_frame and window_enable and not self.dot_window_triggered
+                if may_activate or self.dot_window_triggered:
+                    # No window event may fire inside the burst: the window
+                    # activates, and a triggered window queues its pixel
+                    # insertion, when the x counter reaches the WX match
+                    # position (WX in 7..166; other values never match inside
+                    # the x counter's on-screen region). A match position
+                    # already passed never matches again on this line
+                    wx = self.lcd.WX
+                    if 7 <= wx <= 166:
+                        wdist = (wx - 7) - self.dot_x_counter
+                        if wdist == 0:
+                            limit = 0
+                        elif 0 < wdist < limit:
+                            limit = wdist
+                if may_activate and self.dot_win_match_pending:
+                    # A comparator match on the previous dot still activates
+                    # the window on this dot through the pending-match path
+                    limit = 0
+                if self.dot_n_sprites != 0:
+                    # The head sprite is fetched or dropped when the x
+                    # counter reaches its fetch position; sprites at 168 and
+                    # beyond are never reached on the visible part of the
+                    # line
+                    sprite_x = self.dot_sprite_x[self.dot_n_sprites - 1]
+                    if sprite_x < 168:
+                        wdist = (sprite_x - 8) - self.dot_x_counter
+                        if wdist <= 0:
+                            limit = 0
+                        elif wdist < limit:
+                            limit = wdist
+                if limit > 0:
+                    self._advance_dots_burst(limit)
+                    if self.dot_x_counter == 160:
+                        break
+                    continue
             # SCY as of one dot ago, for the CGB write delay. This must update
             # on every dot, including sprite session dots, so that SCY writes
             # landing during a sprite fetch are observed by the fetcher.
@@ -1728,6 +1811,10 @@ class Renderer:
                 # rewritten before any pixel reads them.
                 _bgp = self.lcd.BGP.get()
                 self.dot_bgp_prev = _bgp
+                # The pre-line samples above are only settled for pixels
+                # popping past renderer dot 43; the burst fast path must
+                # not shade with the live palette before that
+                self.dot_bgp_preline_or = self.dot_bgp_mode3_write
                 if self.dot_bgp_mode3_write:
                     self.dot_bgp_ring[29] = self.dot_bgp_mode3_old
                     self.dot_bgp_ring[30] = self.dot_bgp_mode3_new | self.dot_bgp_mode3_old
@@ -1882,6 +1969,280 @@ class Renderer:
             self._dot_decay_glitch_counters()
             if self.dot_x_counter == 160:
                 break
+
+    def _advance_dots_burst(self, limit):
+        # Bulk processing of `limit` consecutive plain dots on DMG. The caller
+        # has proven that no sprite fetch, window event, register conflict or
+        # FIFO stall can occur within them, and that every PPU register has
+        # been stable for at least one dot, so the per-dot register sampling
+        # collapses to constants. Every dot pops one background pixel, shades
+        # it with the settled BGP and advances the fetcher by one phase.
+        # A FIFO holding one freshly fetched row with the fetcher at its
+        # address phase (count 8, phase 0) is a fixed 8-dot cycle: six fetch
+        # phases, then two push-wait dots where the pop drains the FIFO right
+        # as the push refills it. Those cycles run in bulk; the misaligned
+        # entry and the tail run per dot.
+        ly = self.dot_ly
+        scx = self.lcd.SCX
+        scy = self.lcd.SCY
+        wx = self.lcd.WX
+        window_enable = self.lcd._LCDC.window_enable
+        window_triggered = self.dot_window_triggered
+        bgmap = self.lcd._LCDC.backgroundmap_select
+        winmap = self.lcd._LCDC.windowmap_select
+        tdsel = self.lcd._LCDC.tiledata_select
+        objsize = self.lcd._LCDC.sprite_height
+        bg_enabled = self.lcd._LCDC.background_enable
+        # The pixel pipeline advances identically whether or not the screen
+        # is being rendered; only the screenbuffer writes are skipped
+        render = not self.lcd.disable_renderer
+        bgp = self.lcd.BGP.get()
+        c0 = self.lcd.BGP.palette_mem_rgb[bgp & 3]
+        c1 = self.lcd.BGP.palette_mem_rgb[(bgp >> 2) & 3]
+        c2 = self.lcd.BGP.palette_mem_rgb[(bgp >> 4) & 3]
+        c3 = self.lcd.BGP.palette_mem_rgb[(bgp >> 6) & 3]
+        # The fetcher's row is constant for the whole burst
+        if window_triggered:
+            fetch_row = self.dot_window_line
+        else:
+            fetch_row = (self.lcd.LY + scy) & 0xFF
+        row7 = (fetch_row & 7) * 2
+        map_row_off = (fetch_row >> 3) * 32
+        sb = self._screenbuffer
+        sba = self._screenbuffer_attributes
+        fifo_pixel = self.dot_bg_fifo_pixel
+        elapsed = self.dot_dots_elapsed
+        e0 = elapsed
+        xctr = self.dot_x_counter
+        screen_x = self.dot_screen_x
+        phase = self.dot_fetch_phase
+        count = self.dot_bg_fifo_count
+        read = self.dot_bg_fifo_read
+        window_column = self.dot_window_column
+        tile_index = self.dot_tile_index
+        tile_data_low = self.dot_tile_data_low
+        tile_data_high = self.dot_tile_data_high
+        tilemap_addr = self.dot_tilemap_addr
+        tiledata_addr = self.dot_tiledata_addr
+        tileaddr_dot = self.dot_tileaddr_dot
+        col_x = self.dot_col_x
+        glitch_data = self.dot_glitch_data
+        latched = self.dot_latched_tiledata_select
+        mode0 = self.dot_mode0_elapsed
+        last_dot = self.dot_last_pixel_dot
+        last_x = self.dot_last_pixel_x
+        last_raw = self.dot_last_pixel_raw
+        n = limit
+        while n > 0:
+            if count == 8 and phase == 0 and n >= 8:
+                # Steady 8-dot cycle. Nothing lands inside the burst, so the
+                # order of the pops, the fetch and the push within the cycle
+                # is not observable; only the state at the cycle's end is.
+                while n >= 8:
+                    if render:
+                        if bg_enabled:
+                            for j in range(8):
+                                raw = fifo_pixel[(read + j) & 7]
+                                if raw == 0:
+                                    sb[ly, screen_x + j] = c0
+                                    sba[ly, screen_x + j] = COL0_FLAG
+                                elif raw == 1:
+                                    sb[ly, screen_x + j] = c1
+                                    sba[ly, screen_x + j] = 0
+                                elif raw == 2:
+                                    sb[ly, screen_x + j] = c2
+                                    sba[ly, screen_x + j] = 0
+                                else:
+                                    sb[ly, screen_x + j] = c3
+                                    sba[ly, screen_x + j] = 0
+                        else:
+                            for j in range(8):
+                                sb[ly, screen_x + j] = c0
+                                sba[ly, screen_x + j] = COL0_FLAG
+                    if bg_enabled:
+                        last_raw = fifo_pixel[(read + 7) & 7]
+                    else:
+                        last_raw = 0
+                    if screen_x <= 157 < screen_x + 8:
+                        mode0 = elapsed + 158 - screen_x
+                    # Fetch phases 0..5 run on the cycle's first six dots; the
+                    # fetcher observes the x counter after each dot's pop, and
+                    # the first dot's pop takes it from the cycle-start value
+                    col_x = xctr + 9
+                    if window_triggered:
+                        column = window_column
+                        if winmap:
+                            tilemap_addr = 0x1C00 + column + map_row_off
+                        else:
+                            tilemap_addr = 0x1800 + column + map_row_off
+                    else:
+                        column = (scx + col_x) // 8 & 0b11111
+                        if bgmap:
+                            tilemap_addr = 0x1C00 + column + map_row_off
+                        else:
+                            tilemap_addr = 0x1800 + column + map_row_off
+                    tile_index = self.lcd.VRAM0[tilemap_addr]
+                    latched = tdsel
+                    if tdsel:
+                        tiledata_addr = tile_index * 0x10 + row7
+                    else:
+                        tiledata_addr = (tile_index - 256 if tile_index >= 128 else tile_index) * 0x10 + 0x1000 + row7
+                    tile_data_low = self.lcd.VRAM0[tiledata_addr]
+                    tile_data_high = self.lcd.VRAM0[tiledata_addr + 1]
+                    glitch_data = tile_data_high
+                    tileaddr_dot = elapsed + 5
+                    if window_triggered:
+                        window_column = (window_column + 1) & 0b11111
+                    # The push waits for the pop to drain the FIFO, then
+                    # refills it. The palette and priority FIFOs hold zeroes
+                    # on DMG already.
+                    lower = tile_data_low
+                    upper = tile_data_high
+                    for j in range(8):
+                        fifo_pixel[j] = (lower >> 7) | ((upper >> 7) << 1)
+                        lower = (lower << 1) & 0xFF
+                        upper = (upper << 1) & 0xFF
+                    last_dot = elapsed + 8
+                    last_x = screen_x + 7
+                    xctr += 8
+                    screen_x += 8
+                    elapsed += 8
+                    n -= 8
+                if n == 0:
+                    break
+            # Misaligned entry and tail: one dot at a time
+            elapsed += 1
+            raw = fifo_pixel[read] if bg_enabled else 0
+            read = (read + 1) & 7
+            count -= 1
+            if render:
+                if raw == 0:
+                    sb[ly, screen_x] = c0
+                    sba[ly, screen_x] = COL0_FLAG
+                elif raw == 1:
+                    sb[ly, screen_x] = c1
+                    sba[ly, screen_x] = 0
+                elif raw == 2:
+                    sb[ly, screen_x] = c2
+                    sba[ly, screen_x] = 0
+                else:
+                    sb[ly, screen_x] = c3
+                    sba[ly, screen_x] = 0
+            if screen_x == 157:
+                mode0 = elapsed
+            last_dot = elapsed
+            last_x = screen_x
+            last_raw = raw
+            n -= 1
+            xctr += 1
+            screen_x += 1
+            if phase == 0:
+                # The pre-line special case of the column latch (x counter
+                # 240..247) is outside the burst's on-screen region
+                col_x = xctr + 8
+                phase = 1
+            elif phase == 1:
+                if window_triggered:
+                    column = window_column
+                    if winmap:
+                        tilemap_addr = 0x1C00 + column + map_row_off
+                    else:
+                        tilemap_addr = 0x1800 + column + map_row_off
+                else:
+                    column = (scx + col_x) // 8 & 0b11111
+                    if bgmap:
+                        tilemap_addr = 0x1C00 + column + map_row_off
+                    else:
+                        tilemap_addr = 0x1800 + column + map_row_off
+                tile_index = self.lcd.VRAM0[tilemap_addr]
+                phase = 2
+            elif phase == 2:
+                latched = tdsel
+                if tdsel:
+                    tiledata_addr = tile_index * 0x10 + row7
+                else:
+                    tiledata_addr = (tile_index - 256 if tile_index >= 128 else tile_index) * 0x10 + 0x1000 + row7
+                tileaddr_dot = elapsed
+                phase = 3
+            elif phase == 3:
+                tile_data_low = self.lcd.VRAM0[tiledata_addr]
+                phase = 4
+            elif phase == 4:
+                # Recomputed from the live select like the per-dot path: a
+                # tile data select write may have landed between the two
+                # address phases before the burst started
+                if tdsel:
+                    tiledata_addr = tile_index * 0x10 + row7 + 1
+                else:
+                    tiledata_addr = (tile_index - 256 if tile_index >= 128 else tile_index) * 0x10 + 0x1000 + row7 + 1
+                tileaddr_dot = elapsed
+                phase = 5
+            elif phase == 5:
+                tile_data_high = self.lcd.VRAM0[tiledata_addr]
+                glitch_data = tile_data_high
+                phase = 6
+                if window_triggered:
+                    window_column = (window_column + 1) & 0b11111
+                if count == 0:
+                    self.dot_fill_bg_fifo(tile_data_low, tile_data_high, 0, False, False)
+                    count = 8
+                    phase = 0
+            else:
+                if count == 0:
+                    self.dot_fill_bg_fifo(tile_data_low, tile_data_high, 0, False, False)
+                    count = 8
+                    phase = 0
+            if count == 0:
+                # The next dot would stall waiting for the FIFO; leave it to
+                # the per-dot path
+                break
+        k = limit - n
+        # BGP ring samples for the processed dots. The first slot ORs in the
+        # previous dot's sample (see the per-dot preamble); the rest hold the
+        # settled value. A run longer than the ring erases even that.
+        for j in range(k):
+            self.dot_bgp_ring[(e0 + j) & 31] = bgp
+        if k <= 32:
+            self.dot_bgp_ring[e0 & 31] = bgp | self.dot_bgp_prev
+        self.dot_dots_elapsed = elapsed
+        self.dot_bgp_prev = bgp
+        self.dot_x_counter = xctr
+        self.dot_screen_x = screen_x
+        self.dot_fetch_phase = phase
+        self.dot_bg_fifo_count = count
+        self.dot_bg_fifo_read = read
+        self.dot_window_column = window_column
+        self.dot_tile_index = tile_index
+        self.dot_tile_data_low = tile_data_low
+        self.dot_tile_data_high = tile_data_high
+        self.dot_tilemap_addr = tilemap_addr
+        self.dot_tiledata_addr = tiledata_addr
+        self.dot_tileaddr_dot = tileaddr_dot
+        self.dot_col_x = col_x
+        self.dot_glitch_data = glitch_data
+        self.dot_latched_tiledata_select = latched
+        self.dot_mode0_elapsed = mode0
+        self.dot_last_pixel_dot = last_dot
+        self.dot_last_pixel_x = last_x
+        self.dot_last_pixel_raw = last_raw
+        self.dot_last_pixel_sprite_raw = -1
+        self.dot_last_pixel_sprite_palette = -1
+        self.dot_last_pixel_stalled_recovery = False
+        self.dot_mixer_stalled = False
+        self.dot_fetching_window = False
+        # Register samples as of one dot ago, advanced across the burst
+        self.dot_scy_reg = scy
+        self.dot_scy_prev = scy
+        self.dot_objsize_reg = objsize
+        self.dot_objsize_prev = objsize
+        self.dot_tdsel_reg = tdsel
+        self.dot_tdsel_prev = tdsel
+        self.dot_wx_prev = wx
+        self.dot_wen_prev = window_enable
+        self.dot_wen_cur = window_enable
+        # The pending match is the comparator result of the last processed
+        # dot, evaluated with the x counter as it was at that dot's top
+        self.dot_win_match_pending = wx != 0 and wx < 166 and wx == ((xctr + 6) & 0xFF)
 
     def _dot_sprite_session_start(self, x_match):
         # All sprites sharing the fetcher's x position are fetched in one
