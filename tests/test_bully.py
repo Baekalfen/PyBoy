@@ -25,8 +25,8 @@ def decode_text(pyboy):
 
 
 # https://github.com/Ashiepaws/BullyGB
-def test_bully(bully_file, references_dir, boot_rom):
-    pyboy = PyBoy(bully_file, window="null", cgb=False, randomize=True, bootrom=boot_rom)
+def test_bully(bully_file, references_dir, boot_cgb_rom):
+    pyboy = PyBoy(bully_file, window="null", cgb=True, randomize=True, bootrom=boot_cgb_rom)
     pyboy.set_emulation_speed(0)
     pyboy.tick(500, True)
 
@@ -34,8 +34,11 @@ def test_bully(bully_file, references_dir, boot_rom):
     image = pyboy.screen.image.convert("RGB")
     pyboy.stop(save=False)
 
-    if "Passed" not in text:
-        pytest.xfail(reason="BullyGB reported a failure")
+    if "All tests OK" not in text:
+        if os.environ.get("TEST_VERBOSE_IMAGES"):
+            image.show()
+        screen = " / ".join(line.strip() for line in text.splitlines() if line.strip())
+        pytest.xfail(reason=f"BullyGB: {screen}")
 
     png_path = Path(f"{references_dir}bully/bully.png")
     assert png_path.exists(), "Reference image doesn't exist"
