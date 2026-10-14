@@ -108,7 +108,9 @@ class Motherboard:
         self.key1 = 0
         self.key0 = 0
         self.wram_select = 0
-        self.cgb_undocumented = array("B", [0] * 4)
+        # $FF72-$FF74 power on as zero; $FF75 only has writable bits 4-6,
+        # the rest read high
+        self.cgb_undocumented = array("B", [0, 0, 0, 0b1000_1111])
         self.double_speed = False
 
         if self.cgb:
@@ -513,6 +515,41 @@ class Motherboard:
 
         if self.oam_dma_index == 0xA0:
             self.oam_dma_active = False
+
+    def oam_dma_bus_conflict(self, i, offset):
+        # The CGB OAM DMA bus conflict: while the transfer is active, a CPU
+        # fetch on the same bus as the transfer source reads the byte
+        # currently being transferred instead of the addressed byte
+        # (BullyGB dmabusconflict). Instruction fetches thereby execute the
+        # transferred data as the instruction stream. The transfer advances
+        # one byte per M-cycle regardless of what the CPU does on its own
+        # M-cycles, so instructions with bus-using M-cycles (pushes, writes)
+        # skip stream bytes exactly like on hardware.
+        # Returns the read byte, or -1 if the access does not conflict.
+        # Only instruction fetches are routed here; regular data reads
+        # through getitem are unaffected. The DMG variant of the conflict,
+        # where every read returns $FF, is not emulated.
+        if not self.cgb:
+            return -1
+        source = self.oam_dma_source
+        if source < 0x80:
+            if i >= 0x8000:
+                return -1
+        elif source < 0xA0:
+            if i < 0x8000 or i >= 0xA000:
+                return -1
+        elif source < 0xC0:
+            if i < 0xA000 or i >= 0xC000:
+                return -1
+        elif source < 0xFE:
+            if i < 0xC000 or i >= 0xFE00:
+                return -1
+        elif i < 0xFE00 or i >= 0xFEA0:
+            return -1
+        elapsed = self.cpu.cycles + offset - self.oam_dma_start_cycle
+        if elapsed < 0 or elapsed >= 0x280:  # 160 bytes at 4 cycles each
+            return -1
+        return self.getitem((source << 8) | (elapsed >> 2))
 
     def getitem(self, i):
         if 0x0000 <= i < 0x4000:  # 16kB ROM bank #0
@@ -1039,6 +1076,9 @@ class Motherboard:
         self.oam_dma_reading = False
         self.oam_dma_source = src
         self.oam_dma_index = 0
+        # Re-evaluate the CPU window so the fetch loop picks up the bus
+        # conflict path while the transfer is active
+        self.cpu.bail = True
 
 
 class HDMA:

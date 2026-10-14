@@ -173,10 +173,20 @@ class CPU:
         self.interrupt_queued = False
 
         self.bail = False
-        while self.cycles < _target:
-            self.fetch_and_execute()
-            if self.bail:  # Possible cycles-target changes
-                break
+        # The OAM DMA bus conflict is sampled per fetch, so pick the fetch
+        # path once per window instead of checking on every instruction. A
+        # DMA write bails out of the fast path mid-window (mb.transfer_DMA).
+        if self.mb.oam_dma_active:
+            # NOTE: This is a very rare edge-case
+            while self.cycles < _target:
+                self.fetch_and_execute_dma()
+                if self.bail:  # Possible cycles-target changes
+                    break
+        else:
+            while self.cycles < _target:
+                self.fetch_and_execute()
+                if self.bail:  # Possible cycles-target changes
+                    break
 
     def check_interrupts(self):
         if self.interrupt_queued or self.interrupt_enable_delay:
@@ -251,15 +261,48 @@ class CPU:
         self.interrupt_master_enable = False
         return True
 
+    def fetch_and_execute_dma(self):
+        # CGB OAM DMA bus conflict: while the transfer is active, a CPU
+        # fetch on the transfer source's bus reads the byte being
+        # transferred (mb.oam_dma_bus_conflict) and the CPU executes the
+        # transferred data as its instruction stream (BullyGB
+        # dmabusconflict). Fetches outside the conflict window or bus take
+        # the normal fetch path. Only cpu.tick calls this while an OAM DMA
+        # is active; fetch_and_execute is the unencumbered path otherwise.
+        conflict = self.mb.oam_dma_bus_conflict(self.PC, 0)
+        if conflict < 0:
+            return self.fetch_and_execute()
+
+        pc1 = conflict
+        pc2 = 0
+        pc3 = 0
+        if pc1 == 0xCB or opcodes.OPCODE_LENGTHS[pc1] >= 2:
+            self.memory_access_offset = 4
+            conflict = self.mb.oam_dma_bus_conflict((self.PC + 1) & 0xFFFF, 4)
+            if conflict >= 0:
+                pc2 = conflict
+            else:
+                pc2 = self.mb.getitem((self.PC + 1) & 0xFFFF)
+        if opcodes.OPCODE_LENGTHS[pc1] == 3:
+            self.memory_access_offset = 8
+            conflict = self.mb.oam_dma_bus_conflict((self.PC + 2) & 0xFFFF, 8)
+            if conflict >= 0:
+                pc3 = conflict
+            else:
+                pc3 = self.mb.getitem((self.PC + 2) & 0xFFFF)
+        self.memory_access_offset = 0
+
+        return self.execute_fetched(pc1, pc2, pc3)
+
     def fetch_and_execute(self):
         # HACK: Shortcut the mb.getitem() calls
+        pc2 = 0
+        pc3 = 0
         if (not self.mb.bootrom_enabled) and self.PC + 2 < 0x4000:
             pc1 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected_low, self.PC]
             pc2 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected_low, self.PC + 1]
             pc3 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected_low, self.PC + 2]
-        elif (
-            (not self.mb.bootrom_enabled) and (0x4000 <= self.PC) and (self.PC + 2 < 0x8000)
-        ):  # 16kB switchable ROM bank
+        elif (0x4000 <= self.PC) and (self.PC + 2 < 0x8000):  # 16kB switchable ROM bank
             pc1 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected, self.PC - 0x4000]
             pc2 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected, self.PC + 1 - 0x4000]
             pc3 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected, self.PC + 2 - 0x4000]
@@ -274,6 +317,9 @@ class CPU:
                 pc3 = self.mb.getitem((self.PC + 2) & 0xFFFF)
             self.memory_access_offset = 0
 
+        return self.execute_fetched(pc1, pc2, pc3)
+
+    def execute_fetched(self, pc1, pc2, pc3):
         v = 0
         opcode = pc1
         if opcode == 0xCB:  # Extension code

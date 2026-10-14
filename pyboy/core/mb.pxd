@@ -88,6 +88,8 @@ cdef class Motherboard:
     cdef uint8_t getitem(self, uint16_t) noexcept nogil
     @cython.locals(elapsed=int64_t, target=cython.int, value=uint8_t)
     cdef void sync_oam_dma(self, uint8_t) noexcept nogil
+    @cython.locals(elapsed=int64_t)
+    cdef int oam_dma_bus_conflict(self, uint16_t, uint8_t) noexcept nogil
     @final
     @cython.locals(bank_offset=cython.int, bank=cython.int)
     cdef void setitem(self, uint16_t, uint8_t) noexcept nogil

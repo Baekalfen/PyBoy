@@ -5718,6 +5718,12 @@ def SET_1FF(cpu): # 1FF SET 7,A
 
 
 def no_opcode(cpu):
+    # Illegal opcode. The CPU hard-locks: the interrupt-enable
+    # register is cleared and the core halts with nothing able to
+    # wake it. The rest of the machine keeps running.
+    cpu.interrupts_enabled_register = 0
+    cpu.halted = True
+    cpu.bail = True
     return 0
 
 

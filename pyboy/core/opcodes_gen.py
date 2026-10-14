@@ -1517,7 +1517,16 @@ def update():
         # I hope the irony of the opcode number is not lost.
         lookuplist[0xDB] = (1, "BRK", "Breakpoint/Illegal opcode")
 
-        f.write("def no_opcode(cpu):\n    return 0\n\n\n")
+        f.write(
+            "def no_opcode(cpu):\n"
+            "    # Illegal opcode. The CPU hard-locks: the interrupt-enable\n"
+            "    # register is cleared and the core halts with nothing able to\n"
+            "    # wake it. The rest of the machine keeps running.\n"
+            "    cpu.interrupts_enabled_register = 0\n"
+            "    cpu.halted = True\n"
+            "    cpu.bail = True\n"
+            "    return 0\n\n\n"
+        )
 
         f.write(
             """

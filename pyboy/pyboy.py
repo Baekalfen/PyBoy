@@ -589,6 +589,7 @@ class PyBoy:
             self.mb.sound.disable_sampling = not sound
             self.mb.sound.clear_buffer()
             # Reenter mb.tick until we eventually get a clean exit without breakpoints
+            _bp_step_past = False
             while self.mb.tick() and (not self.quitting):
                 # Breakpoint reached
                 # NOTE: Potentially reinject breakpoint that we have now stepped passed
@@ -604,12 +605,31 @@ class PyBoy:
 
                         if not self._handle_hooks():
                             self._plugin_manager.handle_breakpoint()
+                        # The CPU bails again after singlestepping the
+                        # restored opcode past the breakpoint
+                        _bp_step_past = True
                     else:
                         if self.mb.breakpoint_singlestep_latch:
                             if not self._handle_hooks():
                                 self._plugin_manager.handle_breakpoint()
-                        # Keep singlestepping on, if that's what we're doing
-                        self.mb.breakpoint_singlestep = self.mb.breakpoint_singlestep_latch
+                            # Keep singlestepping on, if that's what we're doing
+                            self.mb.breakpoint_singlestep = self.mb.breakpoint_singlestep_latch
+                        elif _bp_step_past:
+                            # We just singlestepped past a breakpoint or hook;
+                            # resume running the rest of the frame
+                            _bp_step_past = False
+                            self.mb.breakpoint_singlestep = 0
+                        else:
+                            # No breakpoint was registered here and we are not
+                            # singlestepping, so the BRK opcode came from the
+                            # ROM itself. 0xDB is an illegal opcode that
+                            # hard-locks the CPU on hardware: clear the
+                            # interrupt-enable register and halt the core. The
+                            # rest of the machine keeps running, so the frame
+                            # finishes normally below.
+                            self.mb.cpu.interrupts_enabled_register = 0
+                            self.mb.cpu.halted = True
+                            self.mb.breakpoint_singlestep = 0
 
             self.frame_count += 1
         self._post_handle_events()

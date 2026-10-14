@@ -39,8 +39,12 @@ cdef class CPU:
     cdef void set_interruptflag(self, int) noexcept nogil
     cdef bint handle_interrupt(self, uint8_t, uint16_t) noexcept nogil
 
-    @cython.locals(pc1=uint16_t,pc2=uint16_t,pc3=uint16_t, opcode=uint16_t, v=cython.int, a=cython.int, b=cython.int)
+    @cython.locals(pc1=uint16_t,pc2=uint16_t,pc3=uint16_t)
     cdef inline uint8_t fetch_and_execute(self) noexcept nogil
+    @cython.locals(pc1=uint16_t,pc2=uint16_t,pc3=uint16_t, conflict=cython.int)
+    cdef inline uint8_t fetch_and_execute_dma(self) noexcept nogil
+    @cython.locals(opcode=uint16_t, v=cython.int, a=cython.int, b=cython.int)
+    cdef inline uint8_t execute_fetched(self, uint16_t, uint16_t, uint16_t) noexcept nogil
     @cython.locals(_cycles0=int64_t)
     cdef int tick(self, int64_t) noexcept nogil
     cdef int save_state(self, IntIOInterface) except -1
