@@ -324,6 +324,15 @@ cdef class Renderer:
     cdef bint dot_bgp_mode3_write
     cdef uint8_t dot_bgp_mode3_old
     cdef uint8_t dot_bgp_mode3_new
+    # True when the line's pre-line BGP samples hold a write's old-OR-new
+    # sample (see dot_bgp_mode3_write); the burst fast path cannot shade with
+    # the live palette until those samples have been read past
+    cdef bint dot_bgp_preline_or
+    # The renderer dot of the line at which BGP was last written while the
+    # pixel pipeline was still popping (mode 3 or early mode 0), or -1000.
+    # The burst fast path waits 16 dots past it before shading with the live
+    # palette, so every ring sample a delayed pop can still read is settled
+    cdef int dot_bgp_change_dot
     # STOP on CGB halts the CPU while the PPU keeps running, but the PPU
     # cannot access VRAM, so the renderer stays frozen at its blanked
     # black screen
@@ -380,7 +389,67 @@ cdef class Renderer:
         scx=int,
     )
     @cython.locals(win_match=bint)
+    @cython.locals(
+        limit=int,
+        window_enable=bint,
+        may_activate=bint,
+        wx=int,
+        wdist=int,
+        sprite_x=int,
+    )
     cdef void advance_dots(self, int64_t) noexcept nogil
+    @cython.locals(
+        limit=int,
+        n=int,
+        k=int,
+        e0=int,
+        j=int,
+        ly=int,
+        scx=int,
+        scy=int,
+        wx=int,
+        bgp=int,
+        fetch_row=int,
+        row7=int,
+        map_row_off=int,
+        elapsed=int,
+        xctr=int,
+        screen_x=int,
+        phase=int,
+        count=int,
+        read=int,
+        window_column=int,
+        tile_index=int,
+        tile_data_low=uint8_t,
+        tile_data_high=uint8_t,
+        tilemap_addr=int,
+        tiledata_addr=int,
+        tileaddr_dot=int,
+        col_x=int,
+        glitch_data=uint8_t,
+        mode0=int,
+        last_dot=int,
+        last_x=int,
+        last_raw=int,
+        raw=uint8_t,
+        column=int,
+        lower=uint8_t,
+        upper=uint8_t,
+        window_enable=bint,
+        window_triggered=bint,
+        render=bint,
+        bgmap=bint,
+        winmap=bint,
+        tdsel=bint,
+        objsize=bint,
+        bg_enabled=bint,
+        latched=bint,
+        c0=uint32_t,
+        c1=uint32_t,
+        c2=uint32_t,
+        c3=uint32_t,
+    )
+    cdef void _advance_dots_burst(self, int) noexcept nogil
     @cython.locals(color=uint32_t)
     cdef void dot_finish_line(self) noexcept nogil
     @cython.locals(
