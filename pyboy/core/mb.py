@@ -606,6 +606,18 @@ class Motherboard:
                 return 0xFF
             return self.lcd.OAM[i - 0xFE00]
         elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
+            if self.cgb:
+                # The area has no usable storage on CGB. It reads $FF while
+                # OAM is blocked, and otherwise a pattern derived from the
+                # address itself, never the written data.
+                if self.in_tick and not self.oam_dma_reading:
+                    if lcd_interrupt := self.lcd.tick(self.cpu.cycles + self.cpu.memory_access_offset):
+                        self.cpu.set_interruptflag(lcd_interrupt)
+                    if self.lcd._LCDC.lcd_enable and (
+                        self.lcd._STAT._mode in (2, 3) or self.lcd._is_startup_mode2_delay()
+                    ):
+                        return 0xFF
+                return (i & 0xF0) | ((i >> 4) & 0x0F)
             return self.ram.non_io_internal_ram0[i - 0xFEA0]
         else:
             return self.getitem_io_ports(i)
@@ -810,7 +822,8 @@ class Motherboard:
             if not self.oam_dma_active:
                 self.lcd.OAM[i - 0xFE00] = value
         elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
-            self.ram.non_io_internal_ram0[i - 0xFEA0] = value
+            if not self.cgb:
+                self.ram.non_io_internal_ram0[i - 0xFEA0] = value
         else:
             self.setitem_io_ports(i, value)
 
