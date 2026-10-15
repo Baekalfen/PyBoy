@@ -290,7 +290,8 @@ source_suffix = {
 html_theme = "furo"
 html_title = "PyBoy documentation"
 html_extra_path = ["CNAME"]
-html_static_path = []
+html_static_path = ["_static"]
+html_css_files = ["pixelated.css"]
 html_theme_options = {
     "footer_icons": [
         {
