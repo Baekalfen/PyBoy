@@ -51,7 +51,6 @@ ignored_attrs = [
     "_spritecache_state",
     "_tilecache_raw",
     "_tilecache_state",
-    "sprites_to_render",
     "serialbuffer",
     "serialbuffer_count",
     "disable_renderer",  # Not set before calling .tick()

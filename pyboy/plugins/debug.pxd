@@ -21,6 +21,7 @@ cdef bytes FONT_BYTES
 cdef uint32_t[:,:] FONT_BUFFER
 cdef object FONT_BUFFER_P
 cdef uint32_t COLOR, COLOR_BACKGROUND, SPRITE_BACKGROUND, COLOR_WINDOW
+cdef uint32_t COL0_FLAG, BG_PRIORITY_FLAG
 
 cdef Logger logger
 
@@ -141,6 +142,28 @@ cdef class SpriteWindow(BaseDebugWindow):
 cdef class SpriteViewWindow(BaseDebugWindow):
     @cython.locals(t=int, x=int, y=int)
     cdef void post_tick(self) noexcept
+
+    @cython.locals(
+        spriteheight=int,
+        y=int,
+        x=int,
+        n=int,
+        tileindex=int,
+        attributes=int,
+        xflip=bint,
+        yflip=bint,
+        spritepriority=bint,
+        sprite_cache_no=int,
+        palette=int,
+        dy=int,
+        yy=int,
+        dx=int,
+        xx=int,
+        color_code=int,
+        pixel=uint32_t,
+        bgmappriority=bint,
+    )
+    cdef void scanline_sprites(self, int, uint32_t[:,:], uint8_t[:,:], bint) noexcept
 
     @cython.locals(m=MarkedTile, sprite=Sprite, i=int, sprite_index=int)
     cdef void draw_overlay(self) noexcept

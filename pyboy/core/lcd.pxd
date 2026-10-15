@@ -218,7 +218,6 @@ cdef class Renderer:
     cdef uint64_t[:, :] _tilecache_64, _spritecache_64
     cdef uint32_t[:] colorcode_table
 
-    cdef int[10] sprites_to_render
     cdef bint wy_activated_frame
 
     # Dot-accurate renderer: fetcher pipeline and pixel FIFOs that reproduce
@@ -580,9 +579,6 @@ cdef class Renderer:
         bgmappriority=bint,
         sprite_cache_no=int,
     )
-    cdef void scanline_sprites(self, int, uint32_t[:,:], uint8_t[:,:], bint) noexcept nogil
-    cdef void sort_sprites(self, int) noexcept nogil
-
     cdef void clear_cache(self) noexcept nogil
     cdef void clear_tilecache(self, int) noexcept nogil
     cdef void clear_spritecache(self, int) noexcept nogil

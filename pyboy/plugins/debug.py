@@ -681,14 +681,114 @@ class SpriteWindow(BaseDebugWindow):
         sdl2.SDL_SetWindowTitle(self._window, title.encode("utf8"))
 
 
+# Attribute flags in the screen attributes buffer, matching the core renderer
+COL0_FLAG = 0b01
+BG_PRIORITY_FLAG = 0b10
+
+
 class SpriteViewWindow(BaseDebugWindow):
+    def scanline_sprites(self, ly, buffer, buffer_attributes, ignore_priority):
+        lcd = self.mb.lcd
+        renderer = self.renderer
+        if not lcd._LCDC.sprite_enable or lcd.disable_renderer:
+            return
+
+        # Find the first 10 sprites in OAM that appears on this scanline.
+        # The lowest X-coordinate has priority, when overlapping
+        spriteheight = 16 if lcd._LCDC.sprite_height else 8
+        sprites_to_render = []
+        for n in range(0x00, 0xA0, 4):
+            y = lcd.OAM[n] - 16  # Documentation states the y coordinate needs to be subtracted by 16
+            x = lcd.OAM[n + 1] - 8  # Documentation states the x coordinate needs to be subtracted by 8
+
+            if y <= ly < y + spriteheight:
+                # x is used for sorting for priority
+                if renderer.cgb:
+                    sprites_to_render.append(n)
+                else:
+                    sprites_to_render.append(x << 16 | n)
+
+            if len(sprites_to_render) == 10:
+                break
+
+        # Pan docs:
+        # When these 10 sprites overlap, the highest priority one will appear above all others, etc. (Thus, no
+        # Z-fighting.) In CGB mode, the first sprite in OAM ($FE00-$FE03) has the highest priority, and so on. In
+        # Non-CGB mode, the smaller the X coordinate, the higher the priority. The tie breaker (same X coordinates) is
+        # the same priority as in CGB mode.
+        sprites_to_render.sort(reverse=True)
+
+        for _n in sprites_to_render:
+            n = _n if renderer.cgb else _n & 0xFF
+            y = lcd.OAM[n] - 16  # Documentation states the y coordinate needs to be subtracted by 16
+            x = lcd.OAM[n + 1] - 8  # Documentation states the x coordinate needs to be subtracted by 8
+            tileindex = lcd.OAM[n + 2]
+            if spriteheight == 16:
+                tileindex &= 0b11111110
+            attributes = lcd.OAM[n + 3]
+            xflip = attributes & 0b00100000
+            yflip = attributes & 0b01000000
+            spritepriority = (attributes & 0b10000000) and not ignore_priority
+            sprite_cache_no = 0
+            if renderer.cgb:
+                palette = attributes & 0b111
+                if attributes & 0b1000:
+                    sprite_cache_no = 1
+            else:
+                # Fake palette index
+                palette = 0
+                if attributes & 0b10000:
+                    sprite_cache_no = 1
+
+            renderer.update_spritecache(sprite_cache_no, lcd, tileindex, sprite_cache_no if renderer.cgb else 0)
+            if lcd._LCDC.sprite_height:
+                renderer.update_spritecache(sprite_cache_no, lcd, tileindex + 1, sprite_cache_no if renderer.cgb else 0)
+
+            dy = ly - y
+            yy = spriteheight - dy - 1 if yflip else dy
+
+            for dx in range(8):
+                xx = 7 - dx if xflip else dx
+                color_code = renderer._spritecache[sprite_cache_no, 8 * tileindex + yy, xx]
+                if 0 <= x < COLS and not color_code == 0:  # If pixel is not transparent
+                    if renderer.cgb:
+                        pixel = lcd.ocpd.getcolor(palette, color_code)
+                        bgmappriority = buffer_attributes[ly, x] & BG_PRIORITY_FLAG
+
+                        if lcd._LCDC.cgb_master_priority:  # If 0, sprites are always on top, if 1 follow priorities
+                            if bgmappriority:  # If 0, use spritepriority, if 1 take priority
+                                if buffer_attributes[ly, x] & COL0_FLAG:
+                                    buffer[ly, x] = pixel
+                            elif (
+                                spritepriority
+                            ):  # If 1, sprite is behind bg/window. Color 0 of window/bg is transparent
+                                if buffer_attributes[ly, x] & COL0_FLAG:
+                                    buffer[ly, x] = pixel
+                            else:
+                                buffer[ly, x] = pixel
+                        else:
+                            buffer[ly, x] = pixel
+                    else:
+                        # TODO: Unify with CGB
+                        if attributes & 0b10000:
+                            pixel = lcd.OBP1.getcolor(color_code)
+                        else:
+                            pixel = lcd.OBP0.getcolor(color_code)
+
+                        if spritepriority:  # If 1, sprite is behind bg/window. Color 0 of window/bg is transparent
+                            if buffer_attributes[ly, x] & COL0_FLAG:  # if BG pixel is transparent
+                                buffer[ly, x] = pixel
+                        else:
+                            buffer[ly, x] = pixel
+                x += 1
+
     def post_tick(self):
         for y in range(ROWS):
             for x in range(COLS):
                 self.buf0[y, x] = SPRITE_BACKGROUND
 
         for ly in range(144):
-            self.mb.lcd.renderer.scanline_sprites(ly, self.buf0, self.buf0_attributes, True)
+            self.scanline_sprites(ly, self.buf0, self.buf0_attributes, True)
 
         self.draw_overlay()
         BaseDebugWindow.post_tick(self)
