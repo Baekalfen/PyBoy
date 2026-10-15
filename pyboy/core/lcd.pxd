@@ -46,6 +46,10 @@ cdef class LCD:
     cdef uint64_t stat_irq_delivery_clock
     cdef uint8_t stat_mode_lag_bits
     cdef uint64_t stat_mode_lag_until
+    # CPU cycle of the most recent OAM DMA start, mirrored from the
+    # motherboard. The dot renderer derives the byte pair in flight at a
+    # sprite fetch from it (DMG OAM bus conflict)
+    cdef uint64_t oam_dma_start_cycle
     cdef bint frame_done
     cdef bint first_frame
     cdef bint reset

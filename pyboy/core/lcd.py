@@ -72,6 +72,7 @@ class LCD:
         self.stat_irq_delivery_clock = 0
         self.stat_mode_lag_bits = 0
         self.stat_mode_lag_until = 0
+        self.oam_dma_start_cycle = 0
         self.LY = 0x00
         self.mode3_extension = 0
         self.mode3_start_clock = 0
@@ -2324,8 +2325,32 @@ class Renderer:
         # Latch the tile number and attributes from OAM and read the low
         # bitplane of the sprite row
         sprite = self.dot_sprite_index[self.dot_n_sprites - 1]
-        self.dot_sprite_fetch_tile = self.lcd.OAM[sprite * 4 + 2]
-        self.dot_sprite_fetch_flags = self.lcd.OAM[sprite * 4 + 3]
+        tile_addr = sprite * 4 + 2
+        attr_addr = sprite * 4 + 3
+        if not self.cgb and self.lcd.oam_dma_start_cycle:
+            # DMG OAM bus conflict: while an OAM DMA transfer is running, a
+            # PPU read on the OAM bus returns the value of the byte the DMA
+            # is transferring on the current M-cycle, not the addressed byte
+            # (strikethrough). Byte b occupies the bus for the four dots
+            # ending at oam_dma_start_cycle + 4b, and the committed OAM
+            # location only changes then, so a CPU read never sees it
+            # (mooneye oam_dma_start). The byte in flight at this fetch dot
+            # is derived from the dot itself, so a burst-rendered line
+            # observes the same byte as a dot-rendered one.
+            elapsed = (
+                self.lcd.last_cycles
+                - self.lcd.clock
+                + self.lcd.mode3_start_clock
+                + self.dot_dots_elapsed
+                + DOT_MODE3_RENDER_DELAY
+                - self.lcd.oam_dma_start_cycle
+            )
+            index = (elapsed + 4) >> 2
+            if 0 <= index < OBJECT_ATTRIBUTE_MEMORY:
+                tile_addr = index
+                attr_addr = index
+        self.dot_sprite_fetch_tile = self.lcd.OAM[tile_addr]
+        self.dot_sprite_fetch_flags = self.lcd.OAM[attr_addr]
         row_addr = self.dot_sprite_row_addr(
             self.dot_sprite_y[self.dot_n_sprites - 1], self.dot_sprite_fetch_tile, self.dot_sprite_fetch_flags
         )

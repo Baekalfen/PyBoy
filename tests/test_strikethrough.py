@@ -8,7 +8,6 @@ from pathlib import Path
 
 import PIL
 from PIL import ImageChops
-import pytest
 
 from pyboy import PyBoy
 
@@ -30,5 +29,4 @@ def test_strikethrough(strikethrough_file, references_dir):
         image.show()
         old_image.show()
         diff.show()
-    if diff.getbbox():
-        pytest.xfail("OAM DMA mid-scanline corrupts a different sprite than on hardware")
+    assert not diff.getbbox(), "OAM DMA mid-scanline interference differs from hardware"

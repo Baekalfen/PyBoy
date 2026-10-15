@@ -356,6 +356,7 @@ class Motherboard:
         # between restarting a running transfer and the new transfer start,
         # which cannot straddle a state save.
         self.oam_dma_block_cycle = self.oam_dma_start_cycle
+        self.lcd.oam_dma_start_cycle = self.oam_dma_start_cycle
         self.lcd.load_state(f, state_version)
         if state_version >= 8:
             self.sound.load_state(f, state_version)
@@ -1089,6 +1090,7 @@ class Motherboard:
         self.oam_dma_reading = False
         self.oam_dma_source = src
         self.oam_dma_index = 0
+        self.lcd.oam_dma_start_cycle = self.oam_dma_start_cycle
         # Re-evaluate the CPU window so the fetch loop picks up the bus
         # conflict path while the transfer is active
         self.cpu.bail = True
