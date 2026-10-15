@@ -58,13 +58,7 @@ DAID_IMAGE_CASES = [
         360,
         ["ppu_scanline_bgp.gbc.png"],
         "exact",
-        # The write grid, the data-row mapping and the palette-commit dot now
-        # match the capture; the only remaining diffs are three pixels at
-        # x=16 on lines 55/63/71. The real CGB boot ROM leaves its logo at
-        # tilemap rows 6-8 from column 2, and the DMG-mode tile fetch of the
-        # logo entry reads cleared tile data there, while the capture lacks
-        # the boot-logo leftovers in its tilemap.
-        "Boot ROM logo leftovers in the tilemap at rows 6-8; the capture lacks them",
+        None,
         id="ppu_scanline_bgp-CGB",
     ),
     pytest.param(
@@ -118,11 +112,7 @@ DAID_IMAGE_CASES = [
         360,
         ["stop_instr_gbc_mode3.png"],
         "exact",
-        # The STOP behavior matches the capture: the CPU stays stopped and the
-        # PPU keeps displaying the last state. The boot ROM's logo tiles remain
-        # in the tilemap rows the game does not overwrite, while the capture
-        # rig skipped the logo.
-        "Boot ROM logo tiles remain in the tilemap; the hardware capture has a clean tilemap",
+        None,
         id="stop_instr_gbc_mode3",
     ),
 ]

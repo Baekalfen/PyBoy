@@ -61,16 +61,27 @@ class Motherboard:
                 raise PyBoyInvalidOperationException("Invalid bootrom for emulation-mode")
 
         # self.cgb  Controls hw initialization
-        self.cgb_mode = self.cgb and self.cartridge.cgb  # Controls access
+        # self.cgb_mode  Controls access to the CGB registers. The real CGB
+        # boot ROM runs the hardware in CGB mode regardless of the cartridge
+        # flag, and locks the system into CGB or DMG compatibility mode with
+        # its KEY0 write just before handing over ($04 for a DMG-only game
+        # disables the CGB registers). Without a real boot ROM the handover
+        # is stubbed, so the access mode falls back to the cartridge flag.
+        self.cgb_mode = self.cgb and (self.cartridge.cgb or bootrom_file is not None)
+
+        # The serial hardware keeps the post-boot configuration; a DMG-only
+        # game locked into compatibility mode cannot use the CGB serial
+        # features even while booted by the CGB boot ROM
+        serial_cgb_mode = self.cgb and self.cartridge.cgb
 
         self.timer = timer.Timer()
         self.interaction = interaction.Interaction()
         self.ram = ram.RAM(self.cgb, randomize=randomize)
         self.cpu = cpu.CPU(self)
         if serial_shared_memory is not None:
-            self.serial = serial.SerialSharedMemory(self.cgb_mode, serial_shared_memory, serial_interrupt_based)
+            self.serial = serial.SerialSharedMemory(serial_cgb_mode, serial_shared_memory, serial_interrupt_based)
         else:
-            self.serial = serial.Serial(self.cgb_mode)
+            self.serial = serial.Serial(serial_cgb_mode)
 
         # Initialize SGB support
         self.sgb = sgb.SGB(self)
@@ -1022,6 +1033,10 @@ class Motherboard:
                     else:
                         logger.error("key0: Unknown write: %x", value)
                     self.key0 = value & 0b100
+                    # KEY0 locks the register access mode along with the
+                    # renderer: DMG compatibility mode disables the CGB
+                    # registers for the rest of the run
+                    self.cgb_mode = self.cgb and not self.key0
 
                     if self.key0 and self.lcd.renderer.cgb:
                         logger.debug("Migrating from CGB renderer to DMG renderer")
