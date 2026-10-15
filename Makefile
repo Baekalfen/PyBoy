@@ -93,7 +93,7 @@ docs-images:
 	${PY} -m pytest ${ROOT_DIR}/pyboy ${ROOT_DIR}/tests/test_replay.py ${PYTEST_ARGS}
 	${PY} -m pytest ${ROOT_DIR}/docs ${PYTEST_ARGS}
 
-docs: clean generate-test-results
+docs: generate-test-results
 	cd ${ROOT_DIR}/pyboy/plugins && ${PY} manager_gen.py
 	${PY} -m sphinx -E -W --keep-going -b html ${ROOT_DIR}/docs ${ROOT_DIR}/docs/_build/html
 
