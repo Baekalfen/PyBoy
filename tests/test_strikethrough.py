@@ -12,6 +12,9 @@ from PIL import ImageChops
 from pyboy import PyBoy
 
 
+OVERWRITE_PNGS = False
+
+
 # https://github.com/Ashiepaws/strikethrough.gb
 def test_strikethrough(strikethrough_file, references_dir):
     pyboy = PyBoy(strikethrough_file, window="null", cgb=False)
@@ -20,6 +23,11 @@ def test_strikethrough(strikethrough_file, references_dir):
 
     image = pyboy.screen.image.convert("RGB")
     pyboy.stop(save=False)
+
+    png_path = Path("tests/test_results/strikethrough/strikethrough.gb.png")
+    if OVERWRITE_PNGS:
+        png_path.parents[0].mkdir(parents=True, exist_ok=True)
+        image.save(png_path)
 
     png_path = Path(f"{references_dir}strikethrough/strikethrough.png")
     assert png_path.exists(), "Reference image doesn't exist"

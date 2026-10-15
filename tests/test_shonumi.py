@@ -12,6 +12,9 @@ import pytest
 from pyboy import PyBoy
 
 
+OVERWRITE_PNGS = False
+
+
 @pytest.mark.parametrize(
     "rom",
     [
@@ -41,5 +44,10 @@ def test_shonumi(rom, shonumi_dir, references_dir):
         reference_image.show()
         diff.show()
     assert not diff.getbbox(), f"Image differs from reference! {rom}"
+
+    png_path = Path(f"tests/test_results/GB Tests/{rom}.png")
+    if OVERWRITE_PNGS:
+        png_path.parents[0].mkdir(parents=True, exist_ok=True)
+        image.save(png_path)
 
     pyboy.stop(save=False)

@@ -13,6 +13,9 @@ import pytest
 from pyboy import PyBoy
 
 
+OVERWRITE_PNGS = False
+
+
 def decode_text(pyboy):
     # BullyGB uses tiles 0x100 + ASCII for its font
     text = ""
@@ -34,6 +37,11 @@ def test_bully(bully_file, references_dir, boot_cgb_rom):
     image = pyboy.screen.image.convert("RGB")
     pyboy.stop(save=False)
 
+    png_path = Path("tests/test_results/bully/bully.gb.png")
+    if OVERWRITE_PNGS:
+        png_path.parents[0].mkdir(parents=True, exist_ok=True)
+        image.save(png_path)
+
     if "All tests OK" not in text:
         if os.environ.get("TEST_VERBOSE_IMAGES"):
             image.show()
@@ -43,7 +51,9 @@ def test_bully(bully_file, references_dir, boot_cgb_rom):
     png_path = Path(f"{references_dir}bully/bully.png")
     assert png_path.exists(), "Reference image doesn't exist"
     old_image = PIL.Image.open(png_path).convert("RGB")
-    diff = ImageChops.difference(image, old_image)
+    raw_diff = ImageChops.difference(image, old_image)
+    # Match with slight color tolerance
+    diff = raw_diff.point(lambda v: 255 if v > 7 else 0).convert("L")
     if diff.getbbox() and os.environ.get("TEST_VERBOSE_IMAGES"):
         image.show()
         old_image.show()

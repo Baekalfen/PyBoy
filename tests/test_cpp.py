@@ -20,6 +20,8 @@ CPP_CASES = [
     pytest.param("sgb-ext-test.gb", 600, marks=pytest.mark.skip(reason="SGB features are not emulated")),
 ]
 
+OVERWRITE_PNGS = False
+
 
 @pytest.mark.parametrize("rom, frames", CPP_CASES)
 def test_cpp(rom, frames, cpp_dir, references_dir):
@@ -29,6 +31,11 @@ def test_cpp(rom, frames, cpp_dir, references_dir):
 
     image = pyboy.screen.image.convert("RGB")
     pyboy.stop(save=False)
+
+    png_path = Path(f"tests/test_results/cpp/{rom}.png")
+    if OVERWRITE_PNGS:
+        png_path.parents[0].mkdir(parents=True, exist_ok=True)
+        image.save(png_path)
 
     png_path = Path(f"{references_dir}cpp/{rom[:-3]}.png")
     assert png_path.exists(), "Reference image doesn't exist"

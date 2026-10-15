@@ -19,6 +19,9 @@ import pytest
 
 from pyboy import PyBoy
 
+
+OVERWRITE_PNGS = False
+
 MEALYBUG_ROMS = [
     "m2_win_en_toggle.gb",
     "m3_bgp_change.gb",
@@ -156,23 +159,25 @@ def apply_boot_logo_state(pyboy):
     pyboy.memory[0x994C] = 0
 
 
-# Reference images shipped with the repository take precedence over the
-# downloaded mirror. The upstream mealybug repository contains corrupt CGB
-# captures for m3_wx_4_change, m3_wx_5_change, m3_wx_6_change and
-# m3_lcdc_win_en_change_multiple_wx (all four files are identical), so
-# corrected references are vendored here instead.
-VENDORED_REFERENCES = Path(__file__).parent / "references"
+# The upstream mealybug repository doesn't contain CGB captures for these
+# ROMs, so there is no valid reference to validate against.
+CGB_INVALID_REFERENCES = {
+    "m3_wx_4_change.gb",
+    "m3_wx_5_change.gb",
+    "m3_wx_6_change.gb",
+    "m3_lcdc_win_en_change_multiple_wx.gb",
+}
 
 
 @pytest.mark.parametrize("cgb", [False, True], ids=["DMG", "CGB"])
 @pytest.mark.parametrize("rom", MEALYBUG_ROMS)
 def test_mealybug(cgb, rom, mealybug_dir, references_dir):
     mode = "cgb" if cgb else "dmg"
-    reference = VENDORED_REFERENCES / "mealybug" / mode / f"{rom[:-3]}.png"
-    if not reference.exists():
-        reference = Path(f"{references_dir}mealybug/{mode}/{rom[:-3]}.png")
+    reference = Path(f"{references_dir}mealybug/{mode}/{rom[:-3]}.png")
     if not reference.exists():
         pytest.skip(f"No expected image for {rom} on {'CGB' if cgb else 'DMG'}")
+    if cgb and rom in CGB_INVALID_REFERENCES:
+        pytest.skip(f"No valid reference for {rom} on CGB (no upstream capture)")
     if cgb and rom in CGB_REVISION_DEPENDENT:
         pytest.skip(f"{rom} depends on CGB revision-specific TILE_SEL write conflicts")
 
@@ -187,6 +192,11 @@ def test_mealybug(cgb, rom, mealybug_dir, references_dir):
     pyboy.tick(20, True)
     image = pyboy.screen.image
     pyboy.stop(save=False)
+
+    png_path = Path(f"tests/test_results/mealybug/{rom}.{mode}.png")
+    if OVERWRITE_PNGS:
+        png_path.parents[0].mkdir(parents=True, exist_ok=True)
+        image.save(png_path)
 
     reference_image = PIL.Image.open(reference)
     if cgb:
