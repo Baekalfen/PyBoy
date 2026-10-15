@@ -13,6 +13,9 @@ import pytest
 from pyboy import PyBoy
 
 
+OVERWRITE_PNGS = False
+
+
 def dmg_shade_classes(image):
     # The reference images are captured from hardware with its own shade
     # mapping (0xFF, 0xAA, 0x55, 0x00), and PyBoy renders with a different
@@ -55,11 +58,13 @@ DAID_IMAGE_CASES = [
         360,
         ["ppu_scanline_bgp.gbc.png"],
         "exact",
-        # The write grid phase and the loop's data-row mapping now match the
-        # capture; every shade transition still renders one dot late, but
-        # the write landing is pinned to its current dot by the mealybug
-        # CGB captures, so the remaining dot needs finer modeling.
-        "Every shade transition renders one dot late; the write landing is pinned by the mealybug CGB captures",
+        # The write grid, the data-row mapping and the palette-commit dot now
+        # match the capture; the only remaining diffs are three pixels at
+        # x=16 on lines 55/63/71. The real CGB boot ROM leaves its logo at
+        # tilemap rows 6-8 from column 2, and the DMG-mode tile fetch of the
+        # logo entry reads cleared tile data there, while the capture lacks
+        # the boot-logo leftovers in its tilemap.
+        "Boot ROM logo leftovers in the tilemap at rows 6-8; the capture lacks them",
         id="ppu_scanline_bgp-CGB",
     ),
     pytest.param(
@@ -144,6 +149,11 @@ def test_daid_image(
 
     image = pyboy.screen.image.convert("RGB")
     pyboy.stop(save=False)
+
+    png_path = Path(f"tests/test_results/daid/{rom}.{'cgb' if cgb else 'dmg'}.png")
+    if OVERWRITE_PNGS:
+        png_path.parents[0].mkdir(parents=True, exist_ok=True)
+        image.save(png_path)
 
     # The class comparison is not idempotent, so reduce the render to shade
     # classes once and each reference separately

@@ -15,6 +15,7 @@ from pyboy import PyBoy
 import json
 
 OVERWRITE_RESULTS = False
+OVERWRITE_PNGS = False
 
 
 # These classifications follow the "Verified results" tables in the upstream
@@ -324,5 +325,10 @@ def test_mooneye_sprite(cgb, mooneye_dir, references_dir):
         reference_image.show()
         diff.show()
     assert not diff.getbbox(), f"Images are different! {rom}"
+
+    png_path = Path(f"tests/test_results/mooneye/{rom}{(' [CGB]' if cgb else '')}.png")
+    if OVERWRITE_PNGS:
+        png_path.parents[0].mkdir(parents=True, exist_ok=True)
+        image.save(png_path)
 
     pyboy.stop(save=False)

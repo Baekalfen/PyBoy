@@ -13,6 +13,9 @@ import pytest
 from pyboy import PyBoy
 
 
+OVERWRITE_PNGS = False
+
+
 # https://github.com/alloncm/MagenTests
 @pytest.mark.parametrize(
     "rom, reference",
@@ -67,5 +70,10 @@ def test_magen_test(rom, reference, magen_dir, references_dir):
         reference_image.show()
         diff.show()
     assert not diff.getbbox(), f"Image differs from reference! {rom}"
+
+    # Only the captures already shown on the docs page are refreshed
+    png_path = Path(f"tests/test_results/magen/{rom}.png")
+    if OVERWRITE_PNGS and png_path.exists():
+        image.save(png_path)
 
     pyboy.stop(save=False)
