@@ -82,6 +82,20 @@ def load_junit_statuses(path):
     return statuses
 
 
+def load_junit_skips(path):
+    if not path.exists():
+        return {}
+
+    skips = {}
+    root = ElementTree.parse(path).getroot()
+    for testcase in root.iter("testcase"):
+        skipped = testcase.find("skipped")
+        if skipped is not None and skipped.attrib.get("type") != "pytest.xfail":
+            key = (testcase.attrib.get("classname", ""), testcase.attrib.get("name", ""))
+            skips[key] = skipped.attrib.get("message", "")
+    return skips
+
+
 def junit_status(statuses, classname, name):
     return statuses.get((classname, name), "Not run")
 
@@ -233,6 +247,10 @@ def load_image_suites(statuses):
         suite_name = image_suite_name(path)
         if suite_name in EXCLUDED_IMAGE_SUITES:
             continue
+        # The Mealybug suite is listed from the JUnit results instead, so
+        # the skipped subtests are not reduced to their stale images
+        if suite_name == "Mealybug":
+            continue
         relative = path.relative_to(RESULTS_DIR)
         if suite_name not in suites:
             result_location = path.parent if len(relative.parts) > 1 else RESULTS_DIR
@@ -259,6 +277,39 @@ def suite_counts(suite):
 
 def suite_anchor(name):
     return "suite-" + re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+
+
+def load_mealybug_suite(statuses, skips):
+    # The Mealybug suite is listed from the JUnit results so that every
+    # parametrized subtest shows up with its own name, mode and result --
+    # including the skipped ones, which never record an image
+    results = []
+    skip_reasons = {}
+    root = ElementTree.parse(JUNIT_XML).getroot()
+    for testcase in root.iter("testcase"):
+        if testcase.attrib.get("classname", "") != "tests.test_mealybug":
+            continue
+        name = testcase.attrib.get("name", "")
+        rom, _, mode = name[len("test_mealybug[") : -1].rpartition("-")
+        label = f"{rom} [{mode}]"
+        status = junit_status(statuses, "tests.test_mealybug", name)
+        image = None
+        source = RESULTS_DIR / "mealybug" / f"{rom}.{mode.lower()}.png"
+        if source.exists():
+            target = IMAGE_OUTPUT / safe_image_name(source)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
+            image = target.name
+        results.append((label, image, status))
+        reason = skips.get(("tests.test_mealybug", name))
+        if reason:
+            skip_reasons[label] = reason
+    return {
+        "name": "Mealybug",
+        "results": results,
+        "skip_reasons": skip_reasons,
+        "url": github_results_directory_url(RESULTS_DIR / "mealybug"),
+    }
 
 
 def render_result(text, status):
@@ -305,6 +356,7 @@ def render_image_suite(suite):
                 f"```{{image}} assets/test-results/{target}",
                 f":alt: Recorded result for {case}",
                 ":width: 320px",
+                ":class: pixelated",
                 "```",
                 "",
             )
@@ -313,8 +365,46 @@ def render_image_suite(suite):
     return lines
 
 
+def render_mealybug_suite(suite):
+    lines = [
+        f'<details id="{suite_anchor(suite["name"])}">',
+        f"<summary>{suite['name']}</summary>",
+        "",
+        github_links_line(suite),
+        "",
+        "Each subtest names its ROM and the hardware mode it runs in. A recorded",
+        "image exists for the subtests that render; the skipped ones state their",
+        "reason instead.",
+        "",
+    ]
+    for case, image, status in suite["results"]:
+        rom, _, mode = case.rpartition(" [")
+        mode = mode[:-1] if mode.endswith("]") else mode
+        lines.extend((f"**`{rom}`** [{mode}]", "", f"**Result:** {render_result(status, status)}", ""))
+        if image is not None:
+            lines.extend(
+                (
+                    f"```{{image}} assets/test-results/{image}",
+                    f":alt: Recorded result for {case}",
+                    ":width: 320px",
+                    ":class: pixelated",
+                    "```",
+                    "",
+                )
+            )
+        else:
+            reason = suite["skip_reasons"].get(case)
+            if reason:
+                lines.extend((f"Skipped: {reason}", ""))
+            else:
+                lines.extend(("No recorded image", ""))
+    lines.extend(("</details>", ""))
+    return lines
+
+
 def main():
     statuses = load_junit_statuses(JUNIT_XML)
+    skips = load_junit_skips(JUNIT_XML)
     json_suites = [
         load_json_suite("Blargg", RESULTS_DIR / "blargg.json", statuses, blargg_test_status),
         load_json_suite("SameSuite", RESULTS_DIR / "samesuite.json", statuses, samesuite_test_status),
@@ -337,12 +427,14 @@ def main():
     image_suites = load_image_suites(statuses)
     suites = json_suites + image_suites
     # Show Mealybug as the fourth suite, right after Mooneye, instead of its
-    # alphabetical position among the image suites
+    # alphabetical position among the image suites. It is built from the JUnit
+    # results so that every subtest is listed, with or without an image
+    mealybug = load_mealybug_suite(statuses, skips)
     mooneye_index = next((i for i, s in enumerate(suites) if s["name"] == "Mooneye"), None)
-    mealybug = next((s for s in suites if s["name"] == "Mealybug"), None)
-    if mealybug is not None and mooneye_index is not None:
-        suites.remove(mealybug)
+    if mooneye_index is not None:
         suites.insert(mooneye_index + 1, mealybug)
+    else:
+        suites.append(mealybug)
 
     lines = [
         "# Test results",
@@ -390,7 +482,9 @@ def main():
     )
     json_suite_names = {suite["name"] for suite in json_suites}
     for suite in suites:
-        if suite["name"] in json_suite_names:
+        if suite["name"] == "Mealybug":
+            lines.extend(render_mealybug_suite(suite))
+        elif suite["name"] in json_suite_names:
             lines.extend(render_json_suite(suite))
         else:
             lines.extend(render_image_suite(suite))

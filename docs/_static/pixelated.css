@@ -1,0 +1,6 @@
+/* The test-result captures are pixel art scaled up from 160x144; render the
+   upscaled images with hard pixel edges instead of smooth interpolation */
+img.pixelated {
+    image-rendering: crisp-edges; /* Older Firefox */
+    image-rendering: pixelated;
+}
