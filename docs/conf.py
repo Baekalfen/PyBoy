@@ -1,5 +1,6 @@
 """Sphinx configuration for the PyBoy documentation."""
 
+import importlib.util
 from pathlib import Path
 import re
 import sys
@@ -8,6 +9,40 @@ import sys
 DOCS_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = DOCS_DIR.parent
 sys.path.insert(0, str(PROJECT_ROOT))
+
+
+class _PurePythonPyBoyFinder:
+    """Resolve pyboy imports to their .py sources, ignoring Cython-built .so files.
+
+    The compiled extension modules shadow the .py files in the same directories,
+    but they carry no Python source for autodoc's 'bysource' ordering,
+    'preserve_defaults' and viewcode. Loading the .py sources directly keeps the
+    documentation build independent of whether the project has been compiled.
+    Modules without a .py source (e.g. the Cython-only pyboy.logging.logging)
+    are reported as missing, so the packages' own ImportError fallbacks engage
+    the same way they do on PyPy.
+    """
+
+    def find_spec(self, fullname, path=None, target=None):  # pylint: disable=unused-argument
+        parts = fullname.split(".")
+        if parts[0] != "pyboy":
+            return None
+        search_dirs = [PROJECT_ROOT] if path is None else [Path(entry) for entry in path]
+        for directory in search_dirs:
+            package_dir = directory / parts[-1]
+            if (package_dir / "__init__.py").is_file():
+                return importlib.util.spec_from_file_location(
+                    fullname,
+                    package_dir / "__init__.py",
+                    submodule_search_locations=[str(package_dir)],
+                )
+            source = directory / f"{parts[-1]}.py"
+            if source.is_file():
+                return importlib.util.spec_from_file_location(fullname, source)
+        raise ModuleNotFoundError(f"{fullname} has no pure Python source; not loading a Cython-built module")
+
+
+sys.meta_path.insert(0, _PurePythonPyBoyFinder())
 
 # The PyBoy version is read from pyproject.toml, so the documentation always
 # matches the package metadata.
