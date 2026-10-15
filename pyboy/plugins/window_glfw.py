@@ -80,8 +80,11 @@ class WindowGLFW(WindowOpenAL):
         glfw.set_window_title(self.window, title)
 
     def handle_events(self, events):
+        glfw.poll_events()
         events += self.events
         self.events = []
+        if glfw.window_should_close(self.window):
+            events.append(WindowEvent(WindowEvent.QUIT))
 
         for event in events:
             if event != WindowEvent.FULL_SCREEN_TOGGLE:
@@ -228,9 +231,6 @@ class WindowGLFW(WindowOpenAL):
 
     def post_tick(self):
         self._gldraw()
-        glfw.poll_events()
-        if glfw.window_should_close(self.window):
-            raise PyBoyException("Window closed")
         WindowOpenAL.post_tick(self)
 
     def stop(self):
