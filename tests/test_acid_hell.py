@@ -12,6 +12,9 @@ from PIL import ImageChops
 from pyboy import PyBoy
 
 
+OVERWRITE_PNGS = False
+
+
 # https://github.com/mattcurrie/cgb-acid-hell
 def test_cgb_acid_hell(cgb_acid_hell_file, boot_cgb_rom, references_dir):
     pyboy = PyBoy(cgb_acid_hell_file, window="null", bootrom=boot_cgb_rom)
@@ -20,6 +23,11 @@ def test_cgb_acid_hell(cgb_acid_hell_file, boot_cgb_rom, references_dir):
 
     image = pyboy.screen.image.convert("RGB")
     pyboy.stop(save=False)
+
+    png_path = Path("tests/test_results/cgb-acid-hell/cgb-acid-hell.gbc.png")
+    if OVERWRITE_PNGS:
+        png_path.parents[0].mkdir(parents=True, exist_ok=True)
+        image.save(png_path)
 
     png_path = Path(f"{references_dir}cgb-acid-hell/cgb-acid-hell.png")
     assert png_path.exists(), "Reference image doesn't exist"
