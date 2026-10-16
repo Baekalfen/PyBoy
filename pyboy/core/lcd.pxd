@@ -478,6 +478,7 @@ cdef class Renderer:
     )
     cdef void dot_render_pixel(self) noexcept nogil
     cdef inline bint dot_last_pixel_current(self) noexcept nogil
+    cdef inline bint dot_last_pixel_first_of_line(self) noexcept nogil
     @cython.locals(
         index=int,
         sprite_y=uint8_t,
