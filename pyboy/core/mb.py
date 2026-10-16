@@ -1003,7 +1003,7 @@ class Motherboard:
                 elif i == 0xFF46:
                     self.transfer_DMA(value)
                 elif i == 0xFF47:
-                    self.lcd.write_bgp(value, self.cpu.cycles)
+                    self.lcd.write_bgp(value)
                 elif i == 0xFF48:
                     self.lcd.write_obp(0, value)
                 elif i == 0xFF49:

@@ -56,25 +56,6 @@ MEALYBUG_ROMS = [
     "m3_wx_6_change.gb",
 ]
 
-# PyBoy does not yet implement all mid-scanline PPU register changes, which is
-# what these tests target. They are xfailed until the PPU is improved, and
-# will show as XPASS once they start matching the expected images.
-# The delayed DMG BGP shading (dot_bgp_ring) exposes that the mode 2 STAT
-# interrupt dispatch is anchored at the STAT mode change instead of the
-# earlier OAM STAT signal that hardware uses [mealybug/m3_bgp_change]. These
-# ROMs write registers from the mode 2 STAT handler; the delayed shading
-# shifts their writes relative to the pixel pipeline until the interrupt
-# anchor is corrected.
-DMG_KNOWN_FAILURES = {
-    "m3_bgp_change.gb",
-    "m3_bgp_change_sprites.gb",
-    "m3_lcdc_obj_en_change_variant.gb",
-    "m3_window_timing.gb",
-    "m3_window_timing_wx_0.gb",
-}
-
-CGB_KNOWN_FAILURES = set()
-
 # The expected images for these were captured on one specific CGB revision,
 # and their remaining differences come from TILE_SEL write conflicts whose
 # timing differs between CGB revisions. The reference renders differently on
@@ -212,8 +193,5 @@ def test_mealybug(cgb, rom, mealybug_dir, references_dir):
             image.show()
             reference_image.show()
             diff_image.show()
-        known_failure = rom in (CGB_KNOWN_FAILURES if cgb else DMG_KNOWN_FAILURES)
         message = f"{rom} differs from the expected image in {diff_count} pixels at {diff_image.getbbox()}"
-        if known_failure:
-            pytest.xfail(message)
         pytest.fail(message)
