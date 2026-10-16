@@ -65,6 +65,15 @@ for y, font_byte in enumerate(FONT_BYTES):
         FONT_BUFFER[y, x] = 0xFFFFFFFF if font_byte & (0x80 >> x) else 0
 
 
+def cgb_get_background_map_attributes(tile_attributes):
+    palette = tile_attributes & 0b111
+    vbank = (tile_attributes >> 3) & 1
+    horiflip = (tile_attributes >> 5) & 1
+    vertflip = (tile_attributes >> 6) & 1
+    bg_priority = (tile_attributes >> 7) & 1
+    return palette, vbank, horiflip, vertflip, bg_priority
+
+
 class MarkedTile:
     def __init__(
         self,
@@ -384,8 +393,8 @@ class TileViewWindow(BaseDebugWindow):
             # palette_rgb = None
             vbank = 0
             if self.renderer.cgb:
-                palette, vbank, horiflip, vertflip, bg_priority = self.renderer._cgb_get_background_map_attributes(
-                    self.mb.lcd, n
+                palette, vbank, horiflip, vertflip, bg_priority = cgb_get_background_map_attributes(
+                    self.mb.lcd.VRAM1[n]
                 )
                 self.renderer.update_tilecache(1, self.mb.lcd, tile_index, 1)
                 # self.tilecache = self.renderer._tilecache1 if vbank else self.renderer._tilecache0
@@ -1008,8 +1017,8 @@ class GameAreaWindow(BaseDebugWindow):
                     tile_index = (tile_index ^ 0x80) + 128
 
                 if self.renderer.cgb:
-                    palette, vbank, horiflip, vertflip, bg_priority = self.renderer._cgb_get_background_map_attributes(
-                        self.mb.lcd, n
+                    palette, vbank, horiflip, vertflip, bg_priority = cgb_get_background_map_attributes(
+                        self.mb.lcd.VRAM1[n]
                     )
                     self.renderer.update_tilecache(1, self.mb.lcd, tile_index, 1)
                     for color in range(4):

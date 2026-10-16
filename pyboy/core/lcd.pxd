@@ -197,8 +197,6 @@ cdef class LCDCRegister:
     cdef bint background_enable
     cdef bint cgb_master_priority
 
-    cdef uint16_t backgroundmap_offset
-    cdef uint16_t windowmap_offset
 
 @final
 cdef class Renderer:
@@ -544,16 +542,6 @@ cdef class Renderer:
 
     cdef void blank_screen_color(self, uint32_t color) noexcept nogil
 
-
-    @cython.locals(
-        tile_num = uint8_t,
-        palette = uint8_t,
-        vbank = uint8_t,
-        horiflip = uint8_t,
-        vertflip = uint8_t,
-        bg_priority = uint8_t,
-    )
-    cdef inline (int, int, int, int, int) _cgb_get_background_map_attributes(self, LCD, int) noexcept nogil
     @cython.locals(
         spriteheight=int,
         spritecount=int,
