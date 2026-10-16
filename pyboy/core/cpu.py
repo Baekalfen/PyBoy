@@ -13,6 +13,20 @@ FLAGC, FLAGH, FLAGN, FLAGZ = range(4, 8)
 logger = pyboy.logging.get_logger(__name__)
 
 
+def interrupt_priority(raised_and_enabled):
+    # Interrupt dispatch follows a fixed priority (mooneye/ei_sequence)
+    if raised_and_enabled & INTR_VBLANK:
+        return INTR_VBLANK, 0x0040
+    elif raised_and_enabled & INTR_LCDC:
+        return INTR_LCDC, 0x0048
+    elif raised_and_enabled & INTR_TIMER:
+        return INTR_TIMER, 0x0050
+    elif raised_and_enabled & INTR_SERIAL:
+        return INTR_SERIAL, 0x0058
+    else:
+        return INTR_HIGHTOLOW, 0x0060
+
+
 class CPU:
     def __init__(self, mb):
         self.A = 0
@@ -202,16 +216,8 @@ class CPU:
             self.halted_during_ei = False
 
             if self.interrupt_master_enable:
-                if raised_and_enabled & INTR_VBLANK:
-                    self.handle_interrupt(INTR_VBLANK, 0x0040)
-                elif raised_and_enabled & INTR_LCDC:
-                    self.handle_interrupt(INTR_LCDC, 0x0048)
-                elif raised_and_enabled & INTR_TIMER:
-                    self.handle_interrupt(INTR_TIMER, 0x0050)
-                elif raised_and_enabled & INTR_SERIAL:
-                    self.handle_interrupt(INTR_SERIAL, 0x0058)
-                elif raised_and_enabled & INTR_HIGHTOLOW:
-                    self.handle_interrupt(INTR_HIGHTOLOW, 0x0060)
+                flag, addr = interrupt_priority(raised_and_enabled)
+                self.handle_interrupt(flag, addr)
             self.interrupt_queued = True
             return True
         else:
@@ -228,16 +234,7 @@ class CPU:
 
         raised_and_enabled = (self.interrupts_flag_register & 0b11111) & (self.interrupts_enabled_register & 0b11111)
         if raised_and_enabled:
-            if raised_and_enabled & INTR_VBLANK:
-                flag, addr = INTR_VBLANK, 0x0040
-            elif raised_and_enabled & INTR_LCDC:
-                flag, addr = INTR_LCDC, 0x0048
-            elif raised_and_enabled & INTR_TIMER:
-                flag, addr = INTR_TIMER, 0x0050
-            elif raised_and_enabled & INTR_SERIAL:
-                flag, addr = INTR_SERIAL, 0x0058
-            else:
-                flag, addr = INTR_HIGHTOLOW, 0x0060
+            flag, addr = interrupt_priority(raised_and_enabled)
         else:
             # An IE write during the upper push cancels dispatch. The CPU
             # resumes through address zero, where the test hardware vectors.

@@ -22,6 +22,8 @@ cdef uint16_t IF_ADDRESS, IE_ADDRESS
 cdef int16_t FLAGC, FLAGH, FLAGN, FLAGZ
 cdef uint8_t INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW
 
+cdef inline (uint8_t, uint16_t) interrupt_priority(uint8_t) noexcept nogil
+
 
 @cython.final
 cdef class CPU:
