@@ -388,7 +388,10 @@ class TestLCD:
             else:
                 ly_remainder = lcd.clock % 456
                 assert lcd._STAT._mode == 1  # VBLANK
-                assert lcd.cycles_to_mode0() == 456 * (153 - lcd.LY + 1) + (456 - 204 - ly_remainder)
+                # LY reads 0 for the whole last VBlank line on DMG, so the
+                # remaining VBlank lines are counted from the internal line
+                # number instead of the LY register.
+                assert lcd.cycles_to_mode0() == 456 * (153 - ly + 1) + (456 - 204 - ly_remainder)
 
     def test_cycles_to_mode0_skips_sprite_scan_when_result_is_fixed(self, monkeypatch):
         lcd = LCD(False, False, color_palette, cgb_color_palette)
