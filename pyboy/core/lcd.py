@@ -41,6 +41,15 @@ def rgb_to_bgr(color):
     return (a << 24) | (b << 16) | (g << 8) | r
 
 
+def _tiledata_addr(tile_index, tdsel, row7):
+    # Address of one bitplane row in the tile data area: the unsigned
+    # 0x8000 region when the tile data select is set, the signed 0x8800
+    # region otherwise
+    if tdsel:
+        return tile_index * 0x10 + row7
+    return (tile_index - 256 if tile_index >= 128 else tile_index) * 0x10 + 0x1000 + row7
+
+
 class LCD:
     def __init__(self, cgb, cgb_mode, color_palette, cgb_color_palette, randomize=False):
         self.VRAM0 = array("B", [0] * VIDEO_RAM)
@@ -1762,17 +1771,13 @@ class Renderer:
         c2 = self.lcd.BGP.palette_mem_rgb[(bgp >> 4) & 3]
         c3 = self.lcd.BGP.palette_mem_rgb[(bgp >> 6) & 3]
         # The fetcher's row is constant for the whole burst
-        if window_triggered:
-            fetch_row = self.dot_window_line
-        else:
-            fetch_row = (self.lcd.LY + scy) & 0xFF
+        fetch_row = self.dot_window_line if window_triggered else (self.lcd.LY + scy) & 0xFF
         row7 = (fetch_row & 7) * 2
         map_row_off = (fetch_row >> 3) * 32
         sb = self._screenbuffer
         sba = self._screenbuffer_attributes
         fifo_pixel = self.dot_bg_fifo
         elapsed = self.dot_dots_elapsed
-        e0 = elapsed
         xctr = self.dot_x_counter
         screen_x = self.dot_screen_x
         phase = self.dot_fetch_phase
@@ -1831,22 +1836,14 @@ class Renderer:
                     col_x = xctr + 9
                     if window_triggered:
                         column = window_column
-                        if winmap:
-                            tilemap_addr = 0x1C00 + column + map_row_off
-                        else:
-                            tilemap_addr = 0x1800 + column + map_row_off
+                        map_select = winmap
                     else:
                         column = (scx + col_x) // 8 & 0b11111
-                        if bgmap:
-                            tilemap_addr = 0x1C00 + column + map_row_off
-                        else:
-                            tilemap_addr = 0x1800 + column + map_row_off
+                        map_select = bgmap
+                    tilemap_addr = (0x1C00 if map_select else 0x1800) + column + map_row_off
                     tile_index = self.lcd.VRAM0[tilemap_addr]
                     latched = tdsel
-                    if tdsel:
-                        tiledata_addr = tile_index * 0x10 + row7
-                    else:
-                        tiledata_addr = (tile_index - 256 if tile_index >= 128 else tile_index) * 0x10 + 0x1000 + row7
+                    tiledata_addr = _tiledata_addr(tile_index, tdsel, row7)
                     tile_data_low = self.lcd.VRAM0[tiledata_addr]
                     tile_data_high = self.lcd.VRAM0[tiledata_addr + 1]
                     glitch_data = tile_data_high
@@ -1856,12 +1853,8 @@ class Renderer:
                     # The push waits for the pop to drain the FIFO, then
                     # refills it. The palette and priority FIFOs hold zeroes
                     # on DMG already.
-                    lower = tile_data_low
-                    upper = tile_data_high
                     for j in range(8):
-                        fifo_pixel[j] = (lower >> 7) | ((upper >> 7) << 1)
-                        lower = (lower << 1) & 0xFF
-                        upper = (upper << 1) & 0xFF
+                        fifo_pixel[j] = ((tile_data_low >> (7 - j)) & 1) | (((tile_data_high >> (7 - j)) & 1) << 1)
                     last_dot = elapsed + 8
                     last_x = screen_x + 7
                     xctr += 8
@@ -1904,24 +1897,16 @@ class Renderer:
             elif phase == 1:
                 if window_triggered:
                     column = window_column
-                    if winmap:
-                        tilemap_addr = 0x1C00 + column + map_row_off
-                    else:
-                        tilemap_addr = 0x1800 + column + map_row_off
+                    map_select = winmap
                 else:
                     column = (scx + col_x) // 8 & 0b11111
-                    if bgmap:
-                        tilemap_addr = 0x1C00 + column + map_row_off
-                    else:
-                        tilemap_addr = 0x1800 + column + map_row_off
+                    map_select = bgmap
+                tilemap_addr = (0x1C00 if map_select else 0x1800) + column + map_row_off
                 tile_index = self.lcd.VRAM0[tilemap_addr]
                 phase = 2
             elif phase == 2:
                 latched = tdsel
-                if tdsel:
-                    tiledata_addr = tile_index * 0x10 + row7
-                else:
-                    tiledata_addr = (tile_index - 256 if tile_index >= 128 else tile_index) * 0x10 + 0x1000 + row7
+                tiledata_addr = _tiledata_addr(tile_index, tdsel, row7)
                 tileaddr_dot = elapsed
                 phase = 3
             elif phase == 3:
@@ -1931,10 +1916,7 @@ class Renderer:
                 # Recomputed from the live select like the per-dot path: a
                 # tile data select write may have landed between the two
                 # address phases before the burst started
-                if tdsel:
-                    tiledata_addr = tile_index * 0x10 + row7 + 1
-                else:
-                    tiledata_addr = (tile_index - 256 if tile_index >= 128 else tile_index) * 0x10 + 0x1000 + row7 + 1
+                tiledata_addr = _tiledata_addr(tile_index, tdsel, row7) + 1
                 tileaddr_dot = elapsed
                 phase = 5
             elif phase == 5:
@@ -1961,9 +1943,9 @@ class Renderer:
         # previous dot's sample (see the per-dot preamble); the rest hold the
         # settled value. A run longer than the ring erases even that.
         for j in range(k):
-            self.dot_bgp_ring[(e0 + j) & 31] = bgp
+            self.dot_bgp_ring[(self.dot_dots_elapsed + j) & 31] = bgp
         if k <= 32:
-            self.dot_bgp_ring[e0 & 31] = bgp | self.dot_bgp_prev
+            self.dot_bgp_ring[self.dot_dots_elapsed & 31] = bgp | self.dot_bgp_prev
         self.dot_dots_elapsed = elapsed
         self.dot_bgp_prev = bgp
         self.dot_x_counter = xctr
@@ -2337,7 +2319,6 @@ class Renderer:
             # win-enable signal as of the previous dot
             if not self.dot_wen_prev:
                 self.dot_window_triggered = False
-            map_addr = 0x1800
             if self.lcd._is_cgb_hardware():
                 bgmap = self.dot_latched_bgmap
                 winmap = self.dot_latched_winmap
@@ -2346,8 +2327,6 @@ class Renderer:
                 winmap = self.lcd._LCDC.windowmap_select
             # The window and background use separate map-select bits
             map_select = winmap if self.dot_window_triggered else bgmap
-            if map_select:
-                map_addr = 0x1C00
             if self.dot_window_triggered:
                 row = self.dot_window_line
                 column = self.dot_window_column
@@ -2361,7 +2340,7 @@ class Renderer:
                     column = scx >> 3
                 else:
                     column = (scx + self.dot_col_x) // 8 & 0b11111
-            self.dot_tilemap_addr = map_addr + column + (row // 8) * 32
+            self.dot_tilemap_addr = (0x1C00 if map_select else 0x1800) + column + (row // 8) * 32
             if self.dot_cgb_window_glitch:
                 self.dot_fetch_phase = 2
             else:
