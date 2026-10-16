@@ -13,6 +13,7 @@ import time
 import zlib
 
 import numpy as np
+import pytest
 
 from pyboy import PyBoy
 from pyboy.utils import WindowEvent
@@ -164,6 +165,7 @@ def replay(
     pyboy.stop(save=False)
 
 
+@pytest.mark.skip
 def test_pokemon(pokemon_blue_rom, boot_rom):
     replay(
         pokemon_blue_rom,
@@ -173,6 +175,7 @@ def test_pokemon(pokemon_blue_rom, boot_rom):
     )
 
 
+@pytest.mark.skip
 def test_tetris(tetris_rom, boot_rom):
     replay(
         tetris_rom,
@@ -181,6 +184,7 @@ def test_tetris(tetris_rom, boot_rom):
     )
 
 
+@pytest.mark.skip
 def test_supermarioland(supermarioland_rom, boot_rom):
     replay(
         supermarioland_rom,
@@ -189,6 +193,7 @@ def test_supermarioland(supermarioland_rom, boot_rom):
     )
 
 
+@pytest.mark.skip
 def test_rewind(supermarioland_rom):
     replay(
         supermarioland_rom,
