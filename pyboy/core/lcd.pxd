@@ -29,6 +29,8 @@ cdef Logger logger
 @cython.locals(a=uint32_t, r=uint32_t, g=uint32_t, b=uint32_t)
 cpdef uint32_t rgb_to_bgr(uint32_t) noexcept
 
+cdef inline int _tiledata_addr(uint8_t, bint, int) noexcept nogil
+
 @final
 cdef class LCD:
     cdef bint disable_renderer
@@ -399,7 +401,6 @@ cdef class Renderer:
         limit=int,
         n=int,
         k=int,
-        e0=int,
         j=int,
         ly=int,
         scx=int,
@@ -430,8 +431,7 @@ cdef class Renderer:
         last_raw=int,
         raw=uint8_t,
         column=int,
-        lower=uint8_t,
-        upper=uint8_t,
+        map_select=bint,
         window_triggered=bint,
         render=bint,
         bgmap=bint,
@@ -447,15 +447,15 @@ cdef class Renderer:
     cdef void _advance_dots_burst(self, int) noexcept nogil
     @cython.locals(color=uint32_t)
     cdef void dot_finish_line(self) noexcept nogil
+    cdef inline void _dot_tiledata_phase(self, int) noexcept nogil
     @cython.locals(
-        map_addr=int,
         row=int,
         column=int,
         bgmap=bint,
         winmap=bint,
         scx=int,
+        map_select=bint,
     )
-    cdef inline void _dot_tiledata_phase(self, int) noexcept nogil
     cdef void dot_step_fetcher(self) noexcept nogil
     @cython.locals(stale_replay=bint, data=uint8_t)
     cdef inline uint8_t _dot_read_bitplane(self, bint) noexcept nogil
