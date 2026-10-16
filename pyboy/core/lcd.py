@@ -1484,8 +1484,9 @@ class Renderer:
                 limit = target - self.dot_dots_elapsed
                 if limit > 160 - self.dot_x_counter:
                     limit = 160 - self.dot_x_counter
-                window_enable = self.lcd._LCDC.window_enable
-                may_activate = self.wy_activated_frame and window_enable and not self.dot_window_triggered
+                may_activate = (
+                    self.wy_activated_frame and self.lcd._LCDC.window_enable and not self.dot_window_triggered
+                )
                 if may_activate or self.dot_window_triggered:
                     # No window event may fire inside the burst: the window
                     # activates, and a triggered window queues its pixel
@@ -1747,12 +1748,10 @@ class Renderer:
         scx = self.lcd.SCX
         scy = self.lcd.SCY
         wx = self.lcd.WX
-        window_enable = self.lcd._LCDC.window_enable
         window_triggered = self.dot_window_triggered
         bgmap = self.lcd._LCDC.backgroundmap_select
         winmap = self.lcd._LCDC.windowmap_select
         tdsel = self.lcd._LCDC.tiledata_select
-        objsize = self.lcd._LCDC.sprite_height
         bg_enabled = self.lcd._LCDC.background_enable
         # The pixel pipeline advances identically whether or not the screen
         # is being rendered; only the screenbuffer writes are skipped
@@ -1994,13 +1993,13 @@ class Renderer:
         # Register samples as of one dot ago, advanced across the burst
         self.dot_scy_reg = scy
         self.dot_scy_prev = scy
-        self.dot_objsize_reg = objsize
-        self.dot_objsize_prev = objsize
+        self.dot_objsize_reg = self.lcd._LCDC.sprite_height
+        self.dot_objsize_prev = self.lcd._LCDC.sprite_height
         self.dot_tdsel_reg = tdsel
         self.dot_tdsel_prev = tdsel
         self.dot_wx_prev = wx
-        self.dot_wen_prev = window_enable
-        self.dot_wen_cur = window_enable
+        self.dot_wen_prev = self.lcd._LCDC.window_enable
+        self.dot_wen_cur = self.lcd._LCDC.window_enable
         # The pending match is the comparator result of the last processed
         # dot, evaluated with the x counter as it was at that dot's top
         self.dot_win_match_pending = wx != 0 and wx < 166 and wx == ((xctr + 6) & 0xFF)
