@@ -204,11 +204,7 @@ class LCD:
         # one dot ahead of the CPU, so the write misses the read
         # dot there and only affects later reads
         if (value ^ old_lcdc) & 0b100:
-            if (
-                not self._is_cgb_hardware()
-                and (self._STAT._mode == 3 or self._STAT._mode == 0)
-                and self.renderer.dot_ly == self.LY
-            ):
+            if not self._is_cgb_hardware() and self.renderer.dot_midline():
                 self.renderer.dot_relatch_sprite_size()
         # Latch mid-scanline LCDC write effects for the dot renderer
         if self._LCDC.lcd_enable and self._STAT._mode == 3 and self.renderer.dot_ly == self.LY:
@@ -273,12 +269,7 @@ class LCD:
     def write_bgp(self, value, cpu_cycles):
         old_bgp = self.BGP.get()
         self.BGP.set(value)
-        if (
-            not self._is_cgb_hardware()
-            and self._LCDC.lcd_enable
-            and self.renderer.dot_ly == self.LY
-            and (self._STAT._mode == 3 or self._STAT._mode == 0)
-        ):
+        if not self._is_cgb_hardware() and self._LCDC.lcd_enable and self.renderer.dot_midline():
             # A mid-scanline BGP write first becomes visible 13 dots after
             # the write dot (see dot_bgp_ring). The burst fast path may only
             # shade pixels with the live palette once every sample that the
@@ -2594,15 +2585,17 @@ class Renderer:
         self.dot_x_counter = (self.dot_x_counter + 1) & 0xFF
         self.dot_screen_x += 1
 
+    def dot_midline(self):
+        # True while the pixel pipeline is rendering the current scanline:
+        # mode 3, or mode 0 while the line's final pixels are still being
+        # pushed into HBlank
+        return (self.lcd._STAT._mode == 3 or self.lcd._STAT._mode == 0) and self.dot_ly == self.lcd.LY
+
     def dot_last_pixel_current(self):
         # True when the last pixel was output on the current dot: a register
         # write landing now can still recolor it. The final pixels of the
         # line are output a few dots into HBlank, so mode 0 counts too.
-        return (
-            (self.lcd._STAT._mode == 3 or self.lcd._STAT._mode == 0)
-            and self.dot_ly == self.lcd.LY
-            and self.dot_last_pixel_dot == self.dot_dots_elapsed
-        )
+        return self.dot_midline() and self.dot_last_pixel_dot == self.dot_dots_elapsed
 
     def dot_last_pixel_first_of_line(self):
         # The recolorable pixels of a line are the first pixel of the line
