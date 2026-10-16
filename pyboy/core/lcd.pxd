@@ -253,34 +253,31 @@ cdef class Renderer:
     cdef bint dot_x_counter_fractional
     cdef bint dot_bg_insert_pending
     cdef bint dot_win_glitch_blocked
-    cdef uint8_t[:] dot_bg_fifo_pixel
-    cdef uint8_t[:] dot_bg_fifo_palette
-    cdef uint8_t[:] dot_bg_fifo_priority
+    # Each FIFO slot packs one pixel: bits 0-1 the color number, bits 2-4
+    # the CGB palette, bit 5 the BG-to-OAM priority flag, and the object
+    # FIFO adds the OAM priority in bits 6-11 (0 for an empty slot)
+    cdef uint8_t[:] dot_bg_fifo
     cdef int dot_bg_fifo_count
     cdef int dot_bg_fifo_read
-    cdef uint8_t[:] dot_obj_fifo_pixel
-    cdef uint8_t[:] dot_obj_fifo_palette
-    cdef uint8_t[:] dot_obj_fifo_priority
-    cdef uint8_t[:] dot_obj_fifo_bg_priority
+    cdef uint16_t[:] dot_obj_fifo
     cdef int dot_obj_fifo_count
     cdef int dot_obj_fifo_read
-    cdef uint8_t[:] dot_sprite_x
-    cdef uint8_t[:] dot_sprite_y
-    cdef int[:] dot_sprite_index
+    # Each scanned sprite packs as x | y << 8 | OAM index << 16, sorted by
+    # descending x
+    cdef int[:] dot_sprites
     cdef int dot_n_sprites
     cdef uint8_t dot_sprite_fetch_tile
     cdef uint8_t dot_sprite_fetch_flags
     cdef uint8_t dot_sprite_fetch_data_low
     cdef uint8_t dot_sprite_fetch_data_high
-    cdef int dot_sprite_fetch_row_addr
     # The sprite row fetch completes on its high-bitplane read dot, but the
     # merge into the object FIFO is deferred to the start of the next dot:
     # a register write landing on the read dot itself is committed by
     # hardware mid-dot, before the fetcher's address phase, so the read must
     # still be able to observe it before the merge consumes the data.
-    cdef bint dot_sprite_merge_pending
-    cdef int dot_sprite_merge_priority
-    cdef int dot_sprite_merge_y
+    # -1 when no merge is pending, else sprite y | OAM priority << 9 (the
+    # priority is only used on CGB)
+    cdef int dot_sprite_merge
     # Dots of this line at which the sprite fetcher's low and high bitplane
     # reads fired, or -1. A mid-scanline LCDC size write landing exactly on
     # one of these dots is observed by that read.
@@ -459,14 +456,17 @@ cdef class Renderer:
         map_addr=int,
         row=int,
         column=int,
-        stale_replay=bint,
-        glitch_data=uint8_t,
         bgmap=bint,
         winmap=bint,
         scx=int,
     )
+    cdef inline void _dot_tiledata_phase(self, int) noexcept nogil
     cdef void dot_step_fetcher(self) noexcept nogil
+    @cython.locals(stale_replay=bint, data=uint8_t)
+    cdef inline uint8_t _dot_read_bitplane(self, bint) noexcept nogil
     @cython.locals(
+        entry=int,
+        sprite_entry=int,
         pixel=uint8_t,
         sprite_pixel=uint8_t,
         palette=uint8_t,
@@ -479,6 +479,7 @@ cdef class Renderer:
         attributes=uint8_t,
     )
     cdef void dot_render_pixel(self) noexcept nogil
+    cdef inline bint dot_last_pixel_current(self) noexcept nogil
     @cython.locals(
         index=int,
         sprite_y=uint8_t,
@@ -489,27 +490,22 @@ cdef class Renderer:
     cdef void dot_scan_sprites(self) noexcept nogil
     @final
     cdef void reset_dot_pipeline(self) noexcept nogil
-    @cython.locals(
-        count=int,
-        idx=int,
-        startup=int,
-        session_length=int,
-        first_fetch_end=int,
-    )
+    @cython.locals(count=int, first_fetch_end=int)
     cdef void _dot_sprite_session_start(self, uint8_t) noexcept nogil
     @cython.locals(
         count=int,
-        idx=int,
-        startup=int,
-        session_length=int,
         i=int,
         x=int,
     )
     cdef int dot_sprite_mode0_penalty(self, int) noexcept nogil
+    @cython.locals(idx=int, startup=int, session_length=int)
+    cdef inline int _dot_sprite_session_length(self, int, int) noexcept nogil
     @cython.locals(sprite=int, row_addr=int)
     cdef void _dot_sprite_session_low_read(self) noexcept nogil
-    @cython.locals(row_addr=int, data_high=uint8_t, palette=uint8_t)
+    @cython.locals(sprite=int)
     cdef void _dot_sprite_session_high_read(self) noexcept nogil
+    @cython.locals(row_addr=int)
+    cdef inline void _dot_sprite_refetch_high(self) noexcept nogil
     cdef void _dot_sprite_flush_merge(self) noexcept nogil
     cdef void dot_relatch_sprite_size(self) noexcept nogil
     cdef void dot_relatch_scy(self) noexcept nogil
@@ -520,13 +516,15 @@ cdef class Renderer:
     cdef inline void _dot_decay_glitch_counters(self) noexcept nogil
     cdef inline int _dot_scy_sample(self) noexcept nogil
     cdef void dot_fetcher_push(self) noexcept nogil
-    @cython.locals(i=int, pixel=uint8_t)
+    @cython.locals(i=int, pixel=uint8_t, attrs=uint8_t)
     cdef void dot_fill_bg_fifo(self, uint8_t, uint8_t, uint8_t, bint, bint) noexcept nogil
     @cython.locals(
         i=int,
         target=int,
         row_bit=int,
         pixel=uint8_t,
+        entry=int,
+        packed=int,
     )
     cdef void dot_merge_sprite_row(self, uint8_t, uint8_t, uint8_t, bint, int, bint) noexcept nogil
     @cython.locals(tile_y=int, mask=int, addr=int)
@@ -580,6 +578,7 @@ cdef class Renderer:
         sprite_cache_no=int,
     )
     cdef void clear_cache(self) noexcept nogil
+    cdef inline void _clear_cache(self, uint8_t[:], int) noexcept nogil
     cdef void clear_tilecache(self, int) noexcept nogil
     cdef void clear_spritecache(self, int) noexcept nogil
     # @final
@@ -593,7 +592,8 @@ cdef class Renderer:
         colorcode_low=uint64_t,
         colorcode_high=uint64_t,
     )
-    cdef void update_tilecache(self, int, LCD, int, int) noexcept nogil
+    cdef void _update_cache(self, uint64_t[:,:], uint8_t[:], int, LCD, int, int) noexcept nogil
+    cdef inline void update_tilecache(self, int, LCD, int, int) noexcept nogil
     # @final
     @cython.locals(
         x=int,
@@ -605,7 +605,7 @@ cdef class Renderer:
         colorcode_low=uint64_t,
         colorcode_high=uint64_t,
     )
-    cdef void update_spritecache(self, int, LCD, int, int) noexcept nogil
+    cdef inline void update_spritecache(self, int, LCD, int, int) noexcept nogil
 
     @cython.locals(colorcode_low=uint64_t, colorcode_high=uint64_t)
     cdef inline uint64_t colorcode(self, uint64_t, uint64_t) noexcept nogil
