@@ -244,9 +244,7 @@ class LCD:
             not self._is_cgb_hardware()
             and old_lcdc & 0b1
             and not value & 0b1
-            and (self._STAT._mode == 3 or self._STAT._mode == 0)
-            and self.renderer.dot_ly == self.LY
-            and self.renderer.dot_last_pixel_dot == self.renderer.dot_dots_elapsed
+            and self.renderer.dot_last_pixel_current()
             and (self.renderer.dot_last_pixel_x == 0 or self.renderer.dot_last_pixel_stalled_recovery)
             and self.renderer.dot_last_pixel_raw >= 0
             and self.renderer.dot_last_pixel_sprite_raw < 0
@@ -262,9 +260,7 @@ class LCD:
             not self._is_cgb_hardware()
             and old_lcdc & 0b10
             and not value & 0b10
-            and (self._STAT._mode == 3 or self._STAT._mode == 0)
-            and self.renderer.dot_ly == self.LY
-            and self.renderer.dot_last_pixel_dot == self.renderer.dot_dots_elapsed
+            and self.renderer.dot_last_pixel_current()
             and (self.renderer.dot_last_pixel_x == 0 or self.renderer.dot_last_pixel_stalled_recovery)
             and self.renderer.dot_last_pixel_sprite_raw >= 0
         ):
@@ -328,9 +324,7 @@ class LCD:
         # LCD tick that rendered that dot, so recolor it here.
         if (
             not self.cgb
-            and (self._STAT._mode == 3 or self._STAT._mode == 0)
-            and self.renderer.dot_ly == self.LY
-            and self.renderer.dot_last_pixel_dot == self.renderer.dot_dots_elapsed
+            and self.renderer.dot_last_pixel_current()
             and self.renderer.dot_last_pixel_sprite_palette == index
         ):
             if index == 0:
@@ -627,7 +621,7 @@ class LCD:
                     or (
                         self.renderer.dot_n_sprites > 0
                         and (self._LCDC.sprite_enable or self._is_cgb_hardware())
-                        and self.renderer.dot_sprite_x[self.renderer.dot_n_sprites - 1] <= 167
+                        and (self.renderer.dot_sprites[self.renderer.dot_n_sprites - 1] & 0xFF) <= 167
                     )
                 )
             ):
@@ -1179,97 +1173,17 @@ class Renderer:
         # https://gbdev.io/pandocs/Scrolling.html#window
         self.wy_activated_frame = False
 
-        # State for the dot-accurate renderer
-        self.dot_ly = -1
-        self.dot_dots_elapsed = 0
-        self.dot_mode0_elapsed = -1
-        self.dot_mode0_corrected = -1
-        self.dot_mode0_fetcher_based = False
-        self.dot_x_counter = 240
-        self.dot_screen_x = 0
-        self.dot_fetch_phase = 0
-        self.dot_tile_index = 0
-        self.dot_tile_attrs = 0
-        self.dot_tile_data_low = 0
-        self.dot_tile_data_high = 0
-        self.dot_tilemap_addr = 0
-        self.dot_tiledata_addr = 0
-        self.dot_tileaddr_dot = -1
-        self.dot_window_triggered = False
-        self.dot_fetching_window = False
-        self.dot_window_column = 0
-        self.dot_window_line = 0
-        self.dot_x_counter_fractional = False
-        self.dot_bg_insert_pending = False
-        self.dot_win_glitch_blocked = False
-        self.dot_last_pixel_dot = -1
-        self.dot_last_pixel_x = 0
-        self.dot_last_pixel_raw = -1
-        self.dot_last_pixel_sprite_raw = -1
-        self.dot_last_pixel_sprite_palette = -1
-        self.dot_mixer_stalled = False
-        self.dot_last_pixel_stalled_recovery = False
-        self.dot_bg_fifo_pixel = array("B", [0] * 8)
-        self.dot_bg_fifo_palette = array("B", [0] * 8)
-        self.dot_bg_fifo_priority = array("B", [0] * 8)
-        self.dot_bg_fifo_count = 0
-        self.dot_bg_fifo_read = 0
-        self.dot_obj_fifo_pixel = array("B", [0] * 8)
-        self.dot_obj_fifo_palette = array("B", [0] * 8)
-        self.dot_obj_fifo_priority = array("B", [0] * 8)
-        self.dot_obj_fifo_bg_priority = array("B", [0] * 8)
-        self.dot_obj_fifo_count = 0
-        self.dot_obj_fifo_read = 0
-        self.dot_sprite_x = array("B", [0] * 10)
-        self.dot_sprite_y = array("B", [0] * 10)
-        self.dot_sprite_index = array("i", [0] * 10)
-        self.dot_n_sprites = 0
-        self.dot_sprite_fetch_tile = 0
-        self.dot_sprite_fetch_flags = 0
-        self.dot_sprite_fetch_data_low = 0
-        self.dot_sprite_fetch_data_high = 0
-        self.dot_sprite_fetch_row_addr = 0
-        self.dot_sprite_merge_pending = False
-        self.dot_sprite_merge_priority = 0
-        self.dot_sprite_merge_y = 0
-        self.dot_sprite_low_read_dot = -1
-        self.dot_sprite_high_read_dot = -1
-        self.dot_during_sprite_fetch = False
-        self.dot_sprite_session_dots = 0
-        self.dot_sprite_session_count = 0
-        self.dot_sprite_session_low = 0
-        self.dot_sprite_session_high = 0
-        self.dot_session_bg_steps = 0
-        self.dot_wx_prev = 0
-        self.dot_wen_prev = False
-        self.dot_wen_cur = False
-        self.dot_scy_prev = 0
-        self.dot_scy_reg = 0
+        # State for the dot-accurate renderer. reset_dot_pipeline neutralizes
+        # the scalar state to what a running renderer holds between frames,
+        # so a freshly constructed renderer starts identical to one that just
+        # finished a frame.
+        self.dot_bg_fifo = array("B", [0] * 8)
+        self.dot_obj_fifo = array("H", [0] * 8)
+        self.dot_sprites = array("i", [0] * 10)
         self.dot_bgp_ring = array("B", [0] * 32)
-        self.dot_bgp_prev = 0
-        self.dot_bgp_mode3_write = False
-        self.stop_vram_blocked = False
-        self.dot_bgp_mode3_old = 0
-        self.dot_bgp_mode3_new = 0
-        self.dot_bgp_preline_or = False
-        self.dot_bgp_change_dot = -1000
-        self.dot_objsize_prev = False
-        self.dot_objsize_reg = False
-        self.dot_tdsel_prev = False
-        self.dot_tdsel_reg = False
-        self.dot_col_x = 0
-        self.dot_latched_bgmap = False
-        self.dot_latched_winmap = False
-        self.dot_scx_latched = 0
         self._sync_minus = 0
-        self.dot_glitch_data = 0
-        self.dot_latched_tiledata_select = False
-        self.dot_tiledata_glitch_dots = 0
-        self.dot_tiledata_glitch_index = False
-        self.dot_cgb_window_glitch = False
-        self.dot_wx_changed_dots = 0
-        self.dot_win_match_pending = False
-        self.dot_window_extra_dot_pending = False
+        self.stop_vram_blocked = False
+        self.reset_dot_pipeline()
 
     def clear_cache(self):
         self.clear_tilecache(0)
@@ -1292,47 +1206,38 @@ class Renderer:
             self._spritecache_state[tile] = 0
             self._spritecache_state[tile + TILES] = 0
 
-    def clear_tilecache(self, cache_no):
+    def _clear_cache(self, cache_state, cache_no):
         for i in range(TILES):
-            self._tilecache_state[i + (TILES if cache_no else 0)] = 0
+            cache_state[i + (TILES if cache_no else 0)] = 0
+
+    def clear_tilecache(self, cache_no):
+        self._clear_cache(self._tilecache_state, cache_no)
 
     def clear_spritecache(self, cache_no):
-        for i in range(TILES):
-            self._spritecache_state[i + (TILES if cache_no else 0)] = 0
+        self._clear_cache(self._spritecache_state, cache_no)
+
+    def _update_cache(self, cache_64, cache_state, cache_no, lcd, t, bank):
+        if cache_state[t + (TILES if cache_no else 0)]:
+            return
+        # for t in self.tiles_changed0:
+        for k in range(0, 16, 2):  # 2 bytes for each line
+            if self.cgb and bank:
+                byte1 = lcd.VRAM1[t * 16 + k]
+                byte2 = lcd.VRAM1[t * 16 + k + 1]
+            else:
+                byte1 = lcd.VRAM0[t * 16 + k]
+                byte2 = lcd.VRAM0[t * 16 + k + 1]
+            y = (t * 16 + k) // 2
+
+            cache_64[cache_no, y] = self.colorcode(byte1, byte2)
+
+        cache_state[t + (TILES if cache_no else 0)] = 1
 
     def update_tilecache(self, cache_no, lcd, t, bank):
-        if self._tilecache_state[t + (TILES if cache_no else 0)]:
-            return
-        # for t in self.tiles_changed0:
-        for k in range(0, 16, 2):  # 2 bytes for each line
-            if self.cgb and bank:
-                byte1 = lcd.VRAM1[t * 16 + k]
-                byte2 = lcd.VRAM1[t * 16 + k + 1]
-            else:
-                byte1 = lcd.VRAM0[t * 16 + k]
-                byte2 = lcd.VRAM0[t * 16 + k + 1]
-            y = (t * 16 + k) // 2
-
-            self._tilecache_64[cache_no, y] = self.colorcode(byte1, byte2)
-
-        self._tilecache_state[t + (TILES if cache_no else 0)] = 1
+        self._update_cache(self._tilecache_64, self._tilecache_state, cache_no, lcd, t, bank)
 
     def update_spritecache(self, cache_no, lcd, t, bank):
-        if self._spritecache_state[t + (TILES if cache_no else 0)]:
-            return
-        # for t in self.tiles_changed0:
-        for k in range(0, 16, 2):  # 2 bytes for each line
-            if self.cgb and bank:
-                byte1 = lcd.VRAM1[t * 16 + k]
-                byte2 = lcd.VRAM1[t * 16 + k + 1]
-            else:
-                byte1 = lcd.VRAM0[t * 16 + k]
-                byte2 = lcd.VRAM0[t * 16 + k + 1]
-            y = (t * 16 + k) // 2
-
-            self._spritecache_64[cache_no, y] = self.colorcode(byte1, byte2)
-
-        self._spritecache_state[t + (TILES if cache_no else 0)] = 1
+        self._update_cache(self._spritecache_64, self._spritecache_state, cache_no, lcd, t, bank)
 
     def colorcode(self, byte1, byte2):
         colorcode_low = self.colorcode_table[(byte1 & 0xF) | ((byte2 & 0xF) << 4)]
@@ -1420,26 +1325,16 @@ class Renderer:
         self.dot_obj_fifo_count = 0
         self.dot_obj_fifo_read = 0
         for i in range(8):
-            self.dot_bg_fifo_pixel[i] = 0
-            self.dot_bg_fifo_palette[i] = 0
-            self.dot_bg_fifo_priority[i] = 0
-            self.dot_obj_fifo_pixel[i] = 0
-            self.dot_obj_fifo_palette[i] = 0
-            self.dot_obj_fifo_priority[i] = 0
-            self.dot_obj_fifo_bg_priority[i] = 0
+            self.dot_bg_fifo[i] = 0
+            self.dot_obj_fifo[i] = 0
         self.dot_n_sprites = 0
         for i in range(10):
-            self.dot_sprite_x[i] = 0
-            self.dot_sprite_y[i] = 0
-            self.dot_sprite_index[i] = 0
+            self.dot_sprites[i] = 0
         self.dot_sprite_fetch_tile = 0
         self.dot_sprite_fetch_flags = 0
         self.dot_sprite_fetch_data_low = 0
         self.dot_sprite_fetch_data_high = 0
-        self.dot_sprite_fetch_row_addr = 0
-        self.dot_sprite_merge_pending = False
-        self.dot_sprite_merge_priority = 0
-        self.dot_sprite_merge_y = 0
+        self.dot_sprite_merge = -1
         self.dot_sprite_low_read_dot = -1
         self.dot_sprite_high_read_dot = -1
         self.dot_during_sprite_fetch = False
@@ -1527,7 +1422,7 @@ class Renderer:
         self.dot_sprite_session_low = 0
         self.dot_sprite_session_high = 0
         self.dot_session_bg_steps = 0
-        self.dot_sprite_merge_pending = False
+        self.dot_sprite_merge = -1
         self.dot_sprite_low_read_dot = -1
         self.dot_sprite_high_read_dot = -1
         self.dot_window_extra_dot_pending = False
@@ -1581,7 +1476,7 @@ class Renderer:
                 and self.dot_sprite_session_dots == 0
                 and self.dot_session_bg_steps == 0
                 and not self.dot_during_sprite_fetch
-                and not self.dot_sprite_merge_pending
+                and self.dot_sprite_merge == -1
                 and not self.dot_bg_insert_pending
                 and not self.dot_window_extra_dot_pending
                 and not self.dot_mixer_stalled
@@ -1630,7 +1525,7 @@ class Renderer:
                     # counter reaches its fetch position; sprites at 168 and
                     # beyond are never reached on the visible part of the
                     # line
-                    sprite_x = self.dot_sprite_x[self.dot_n_sprites - 1]
+                    sprite_x = self.dot_sprites[self.dot_n_sprites - 1] & 0xFF
                     if sprite_x < 168:
                         wdist = (sprite_x - 8) - self.dot_x_counter
                         if wdist <= 0:
@@ -1666,7 +1561,7 @@ class Renderer:
             # tile data select write one dot later than on normal dots
             self.dot_tdsel_reg = self.dot_tdsel_prev
             self.dot_tdsel_prev = self.lcd._LCDC.tiledata_select
-            if self.dot_sprite_merge_pending:
+            if self.dot_sprite_merge != -1:
                 self._dot_sprite_flush_merge()
 
             # The window comparator sees WX as of one dot ago. The win-enable
@@ -1813,7 +1708,7 @@ class Renderer:
 
                 # Drop sprites that have scrolled out of fetch range
                 x_match = self.dot_sprite_fetch_x()
-                while self.dot_n_sprites != 0 and self.dot_sprite_x[self.dot_n_sprites - 1] < x_match:
+                while self.dot_n_sprites != 0 and (self.dot_sprites[self.dot_n_sprites - 1] & 0xFF) < x_match:
                     self.dot_n_sprites -= 1
 
                 # A sprite fetch session starts when the fetcher's x position
@@ -1821,7 +1716,7 @@ class Renderer:
                 if (
                     self.dot_n_sprites != 0
                     and (self.lcd._LCDC.sprite_enable or self.lcd._is_cgb_hardware())
-                    and self.dot_sprite_x[self.dot_n_sprites - 1] == x_match
+                    and (self.dot_sprites[self.dot_n_sprites - 1] & 0xFF) == x_match
                 ):
                     self._dot_sprite_session_start(x_match)
                     # The background fetcher completes its in-flight fetch
@@ -1892,7 +1787,7 @@ class Renderer:
         map_row_off = (fetch_row >> 3) * 32
         sb = self._screenbuffer
         sba = self._screenbuffer_attributes
-        fifo_pixel = self.dot_bg_fifo_pixel
+        fifo_pixel = self.dot_bg_fifo
         elapsed = self.dot_dots_elapsed
         e0 = elapsed
         xctr = self.dot_x_counter
@@ -1924,7 +1819,7 @@ class Renderer:
                     if render:
                         if bg_enabled:
                             for j in range(8):
-                                raw = fifo_pixel[(read + j) & 7]
+                                raw = fifo_pixel[(read + j) & 7] & 0b11
                                 if raw == 0:
                                     sb[ly, screen_x + j] = c0
                                     sba[ly, screen_x + j] = COL0_FLAG
@@ -1942,7 +1837,7 @@ class Renderer:
                                 sb[ly, screen_x + j] = c0
                                 sba[ly, screen_x + j] = COL0_FLAG
                     if bg_enabled:
-                        last_raw = fifo_pixel[(read + 7) & 7]
+                        last_raw = fifo_pixel[(read + 7) & 7] & 0b11
                     else:
                         last_raw = 0
                     if screen_x <= 157 < screen_x + 8:
@@ -1994,7 +1889,7 @@ class Renderer:
                     break
             # Misaligned entry and tail: one dot at a time
             elapsed += 1
-            raw = fifo_pixel[read] if bg_enabled else 0
+            raw = (fifo_pixel[read] & 0b11) if bg_enabled else 0
             read = (read + 1) & 7
             count -= 1
             if render:
@@ -2126,17 +2021,14 @@ class Renderer:
         # dot, evaluated with the x counter as it was at that dot's top
         self.dot_win_match_pending = wx != 0 and wx < 166 and wx == ((xctr + 6) & 0xFF)
 
-    def _dot_sprite_session_start(self, x_match):
+    def _dot_sprite_session_length(self, x, count):
         # All sprites sharing the fetcher's x position are fetched in one
         # session. The session length depends on the SCX alignment (idx) and
         # on the number of sprites in the session. After the last fetch the
         # fetcher pays a fixed restart delay that depends only on the
         # alignment, whether or not further sprites follow on the line:
         # 11,10,9,8,7,6,6,6 dots in total for idx 0..7.
-        count = 0
-        while count < self.dot_n_sprites and self.dot_sprite_x[self.dot_n_sprites - 1 - count] <= x_match:
-            count += 1
-        idx = (x_match + self.lcd.SCX) & 7
+        idx = (x + self.lcd.SCX) & 7
         if idx < 2:
             startup = 8
         elif idx < 4:
@@ -2153,6 +2045,13 @@ class Renderer:
             session_length += 3
         else:
             session_length += 2
+        return session_length
+
+    def _dot_sprite_session_start(self, x_match):
+        count = 0
+        while count < self.dot_n_sprites and (self.dot_sprites[self.dot_n_sprites - 1 - count] & 0xFF) <= x_match:
+            count += 1
+        session_length = self._dot_sprite_session_length(x_match, count)
         # The trigger dot has already been paid by the caller
         self.dot_sprite_session_dots = session_length - 1
         self.dot_sprite_session_count = count
@@ -2169,43 +2068,29 @@ class Renderer:
         # sum of the session lengths, minus the `startup_overlap` dots of
         # the line's first session that overlap the fixed mode-3 startup.
         # The session lengths follow the same alignment model as
-        # _dot_sprite_session_start. Sprites at x >= 168 are never
+        # _dot_sprite_session_length. Sprites at x >= 168 are never
         # reached by the fetcher and add nothing, but a scan that found
         # any sprite at all still pays the startup overlap.
         penalty = (self.lcd.SCX & 7) - startup_overlap
         i = self.dot_n_sprites - 1
         while i >= 0:
-            x = self.dot_sprite_x[i]
+            x = self.dot_sprites[i] & 0xFF
             if x >= 168:
                 # The list is sorted by descending x, so every remaining
                 # sprite is also out of the fetcher's reach
                 break
             count = 1
-            while i - count >= 0 and self.dot_sprite_x[i - count] == x:
+            while i - count >= 0 and (self.dot_sprites[i - count] & 0xFF) == x:
                 count += 1
             i -= count
-            idx = (x + self.lcd.SCX) & 7
-            if idx < 2:
-                startup = 8
-            elif idx < 4:
-                startup = 6
-            elif idx < 7:
-                startup = 4
-            else:
-                startup = 3
-            session_length = startup + 6 * (count - 1)
-            if idx == 0 or idx == 2 or idx == 4 or idx == 7:
-                session_length += 3
-            else:
-                session_length += 2
-            penalty += session_length
+            penalty += self._dot_sprite_session_length(x, count)
         return penalty
 
     def _dot_sprite_session_low_read(self):
         self.dot_sprite_low_read_dot = self.dot_dots_elapsed
         # Latch the tile number and attributes from OAM and read the low
         # bitplane of the sprite row
-        sprite = self.dot_sprite_index[self.dot_n_sprites - 1]
+        sprite = self.dot_sprites[self.dot_n_sprites - 1] >> 16
         tile_addr = sprite * 4 + 2
         attr_addr = sprite * 4 + 3
         if not self.cgb and self.lcd.oam_dma_start_cycle:
@@ -2233,47 +2118,49 @@ class Renderer:
         self.dot_sprite_fetch_tile = self.lcd.OAM[tile_addr]
         self.dot_sprite_fetch_flags = self.lcd.OAM[attr_addr]
         row_addr = self.dot_sprite_row_addr(
-            self.dot_sprite_y[self.dot_n_sprites - 1], self.dot_sprite_fetch_tile, self.dot_sprite_fetch_flags
+            (self.dot_sprites[self.dot_n_sprites - 1] >> 8) & 0xFF,
+            self.dot_sprite_fetch_tile,
+            self.dot_sprite_fetch_flags,
         )
-        self.dot_sprite_fetch_row_addr = row_addr
         self.dot_sprite_fetch_data_low = self.dot_read_vram(row_addr)
 
-    def _dot_sprite_session_high_read(self):
-        self.dot_sprite_high_read_dot = self.dot_dots_elapsed
+    def _dot_sprite_refetch_high(self):
         # The high bitplane address is re-derived at read time, so a register
         # write landing between the two reads (for example an OBJ size
         # change) is observed here even though the low bitplane address was
         # derived before it
-        self.dot_sprite_merge_y = self.dot_sprite_y[self.dot_n_sprites - 1]
         row_addr = self.dot_sprite_row_addr(
-            self.dot_sprite_merge_y, self.dot_sprite_fetch_tile, self.dot_sprite_fetch_flags
+            self.dot_sprite_merge & 0xFF, self.dot_sprite_fetch_tile, self.dot_sprite_fetch_flags
         )
-        self.dot_sprite_fetch_row_addr = row_addr
         self.dot_sprite_fetch_data_high = self.dot_read_vram(row_addr + 1)
         self.dot_glitch_data = self.dot_read_vram(row_addr + 1)
+
+    def _dot_sprite_session_high_read(self):
+        self.dot_sprite_high_read_dot = self.dot_dots_elapsed
+        sprite = self.dot_sprites[self.dot_n_sprites - 1]
         # On CGB, the sprite with the lower OAM index wins when sprites
         # overlap. The merge overwrites a pixel when the already-merged
         # sprite has a higher priority value, so the OAM index is captured
         # here and passed to the deferred merge. On DMG the priority is the
         # x coordinate, which the fetch order (ascending x) already accounts
         # for: the first sprite merged wins, and a tie never overwrites.
-        self.dot_sprite_merge_priority = self.dot_sprite_index[self.dot_n_sprites - 1] if self.lcd.cgb else 0
+        # The merge into the object FIFO is deferred to the start of the next
+        # dot: hardware commits a register write landing on this read dot
+        # mid-dot, before the fetcher's address phase, so the relatch below
+        # can still update the fetched data before the merge consumes it
+        self.dot_sprite_merge = ((sprite >> 8) & 0xFF) | (((sprite >> 16) << 9) if self.lcd.cgb else 0)
+        self._dot_sprite_refetch_high()
         self.dot_n_sprites -= 1
         self.dot_sprite_session_count -= 1
         if self.dot_sprite_session_count > 0:
             self.dot_sprite_session_low = 4
             self.dot_sprite_session_high = 6
-        # The merge into the object FIFO is deferred to the start of the next
-        # dot: hardware commits a register write landing on this read dot
-        # mid-dot, before the fetcher's address phase, so the relatch below
-        # can still update the fetched data before the merge consumes it
-        self.dot_sprite_merge_pending = True
 
     def _dot_sprite_flush_merge(self):
         # Overlay the sprite row (costs no dots)
         if self.lcd.cgb:
             palette = self.dot_sprite_fetch_flags & 0b111
-            priority = self.dot_sprite_merge_priority
+            priority = self.dot_sprite_merge >> 9
         else:
             palette = 1 if (self.dot_sprite_fetch_flags & 0x10) else 0
             priority = 0
@@ -2285,7 +2172,7 @@ class Renderer:
             priority,
             (self.dot_sprite_fetch_flags & 0x20) != 0,
         )
-        self.dot_sprite_merge_pending = False
+        self.dot_sprite_merge = -1
 
     def dot_relatch_sprite_size(self):
         # A mid-scanline LCDC size write landing exactly on the fetcher's
@@ -2297,13 +2184,8 @@ class Renderer:
         # data.
         if self.dot_sprite_low_read_dot == self.dot_dots_elapsed:
             self._dot_sprite_session_low_read()
-        if self.dot_sprite_high_read_dot == self.dot_dots_elapsed and self.dot_sprite_merge_pending:
-            row_addr = self.dot_sprite_row_addr(
-                self.dot_sprite_merge_y, self.dot_sprite_fetch_tile, self.dot_sprite_fetch_flags
-            )
-            self.dot_sprite_fetch_row_addr = row_addr
-            self.dot_sprite_fetch_data_high = self.dot_read_vram(row_addr + 1)
-            self.dot_glitch_data = self.dot_read_vram(row_addr + 1)
+        if self.dot_sprite_high_read_dot == self.dot_dots_elapsed and self.dot_sprite_merge != -1:
+            self._dot_sprite_refetch_high()
 
     def dot_relatch_scy(self):
         # A mid-scanline SCY write landing exactly on the fetcher's tile
@@ -2392,17 +2274,46 @@ class Renderer:
                 # Sort the visible sprites by descending x (and priority)
                 j = 0
                 while j < self.dot_n_sprites:
-                    if self.dot_sprite_x[j] <= sprite_x:
+                    if (self.dot_sprites[j] & 0xFF) <= sprite_x:
                         break
                     j += 1
                 for k in range(self.dot_n_sprites, j, -1):
-                    self.dot_sprite_x[k] = self.dot_sprite_x[k - 1]
-                    self.dot_sprite_y[k] = self.dot_sprite_y[k - 1]
-                    self.dot_sprite_index[k] = self.dot_sprite_index[k - 1]
-                self.dot_sprite_index[j] = index
-                self.dot_sprite_x[j] = sprite_x
-                self.dot_sprite_y[j] = sprite_y
+                    self.dot_sprites[k] = self.dot_sprites[k - 1]
+                self.dot_sprites[j] = sprite_x | (sprite_y << 8) | (index << 16)
                 self.dot_n_sprites += 1
+
+    def _dot_read_bitplane(self, mirror_glitch):
+        # A write toggling the tile data select on the same T-cycle as the
+        # bitplane read substitutes the tile index for that bitplane's data
+        # (CGB tile data select conflict). In double speed the fetcher may
+        # instead replay stale data
+        stale_replay = False
+        data = 0
+        if self.dot_tiledata_glitch_dots:
+            if self.dot_tiledata_glitch_index:
+                data = self.dot_tile_index
+                stale_replay = True
+            elif self.dot_latched_tiledata_select:
+                stale_replay = not (self.dot_tile_index & 0x80)
+            else:
+                stale_replay = True
+        if not stale_replay:
+            data = self.dot_read_vram(self.dot_tiledata_addr)
+            if mirror_glitch:
+                # The high bitplane read doubles as the glitch data source
+                self.dot_glitch_data = data
+        if self.dot_latched_tiledata_select and self.dot_tiledata_glitch_dots:
+            self.dot_glitch_data = self.dot_read_vram(self.dot_tiledata_addr)
+        return data
+
+    def _dot_tiledata_phase(self, byte_offset):
+        # Address phase shared by both bitplane fetches: latch the tile data
+        # address and the dot it was derived on, so an SCY write landing on
+        # this dot re-derives it (see dot_relatch_scy)
+        self.dot_update_window_glitch()
+        self.dot_tiledata_addr = self._dot_tiledat_addr(byte_offset)
+        self.dot_tileaddr_dot = self.dot_dots_elapsed
+        self.dot_fetch_phase += 1
 
     def dot_step_fetcher(self):
         # The background/window fetcher pipeline. Each phase completes in one
@@ -2447,9 +2358,9 @@ class Renderer:
             else:
                 bgmap = self.lcd._LCDC.backgroundmap_select
                 winmap = self.lcd._LCDC.windowmap_select
-            if bgmap and not self.dot_window_triggered:
-                map_addr = 0x1C00
-            elif winmap and self.dot_window_triggered:
+            # The window and background use separate map-select bits
+            map_select = winmap if self.dot_window_triggered else bgmap
+            if map_select:
                 map_addr = 0x1C00
             if self.dot_window_triggered:
                 row = self.dot_window_line
@@ -2480,68 +2391,25 @@ class Renderer:
                     self.dot_tile_attrs = 0
                 self.dot_fetch_phase = 2
         elif self.dot_fetch_phase == 2:
-            self.dot_update_window_glitch()
-            self.dot_tiledata_addr = self._dot_tiledat_addr(0)
-            self.dot_tileaddr_dot = self.dot_dots_elapsed
-            self.dot_fetch_phase = 3
+            self._dot_tiledata_phase(0)
         elif self.dot_fetch_phase == 3:
             if self.dot_cgb_window_glitch:
                 self.dot_tile_data_low = self.dot_tile_data_high
-                self.dot_fetch_phase = 4
             else:
-                stale_replay = False
-                if self.dot_tiledata_glitch_dots:
-                    # CGB tile data select conflict: a write toggling the
-                    # select on the same T-cycle as the read substitutes
-                    # the tile index for that bitplane's data. In double
-                    # speed the fetcher may instead replay stale data
-                    if self.dot_tiledata_glitch_index:
-                        self.dot_tile_data_low = self.dot_tile_index
-                        stale_replay = True
-                    elif self.dot_latched_tiledata_select:
-                        stale_replay = not (self.dot_tile_index & 0x80)
-                    else:
-                        stale_replay = True
-                if not stale_replay:
-                    self.dot_tile_data_low = self.dot_read_vram(self.dot_tiledata_addr)
-                if self.dot_latched_tiledata_select and self.dot_tiledata_glitch_dots:
-                    self.dot_glitch_data = self.dot_read_vram(self.dot_tiledata_addr)
-                self.dot_fetch_phase = 4
+                self.dot_tile_data_low = self._dot_read_bitplane(False)
+            self.dot_fetch_phase = 4
         elif self.dot_fetch_phase == 4:
-            self.dot_update_window_glitch()
-            self.dot_tiledata_addr = self._dot_tiledat_addr(1)
-            self.dot_tileaddr_dot = self.dot_dots_elapsed
-            self.dot_fetch_phase = 5
+            self._dot_tiledata_phase(1)
         elif self.dot_fetch_phase == 5:
+            self.dot_fetch_phase = 6
             if self.dot_cgb_window_glitch:
                 self.dot_tile_data_high = self.dot_tile_data_low
-                self.dot_fetch_phase = 6
-                if self.dot_window_triggered:
-                    self.dot_window_column = (self.dot_window_column + 1) & 0b11111
             else:
-                stale_replay = False
-                if self.dot_tiledata_glitch_dots:
-                    # A write toggling the tile data select on the same
-                    # T-cycle as this read substitutes the tile index for
-                    # that bitplane's data. In double speed the fetcher may
-                    # instead replay stale data
-                    if self.dot_tiledata_glitch_index:
-                        self.dot_tile_data_high = self.dot_tile_index
-                        stale_replay = True
-                    elif self.dot_latched_tiledata_select:
-                        stale_replay = not (self.dot_tile_index & 0x80)
-                    else:
-                        stale_replay = True
-                if not stale_replay:
-                    self.dot_tile_data_high = self.dot_read_vram(self.dot_tiledata_addr)
-                    self.dot_glitch_data = self.dot_tile_data_high
-                if self.dot_latched_tiledata_select and self.dot_tiledata_glitch_dots:
-                    self.dot_glitch_data = self.dot_read_vram(self.dot_tiledata_addr)
-                self.dot_fetch_phase = 6
-                if self.dot_window_triggered:
-                    self.dot_window_column = (self.dot_window_column + 1) & 0b11111
+                self.dot_tile_data_high = self._dot_read_bitplane(True)
                 # Fall through to the push
                 self.dot_fetcher_push()
+            if self.dot_window_triggered:
+                self.dot_window_column = (self.dot_window_column + 1) & 0b11111
         elif self.dot_fetch_phase == 6:
             self.dot_fetcher_push()
 
@@ -2585,9 +2453,7 @@ class Renderer:
             # screen edge the comparator reads 0, matching WX=0
             if self.lcd.WX == (self.dot_x_counter + 7 if self.dot_x_counter <= 160 else 0):
                 self.dot_bg_fifo_read = (self.dot_bg_fifo_read - 1) & 7
-                self.dot_bg_fifo_pixel[self.dot_bg_fifo_read] = 0
-                self.dot_bg_fifo_palette[self.dot_bg_fifo_read] = 0
-                self.dot_bg_fifo_priority[self.dot_bg_fifo_read] = 0
+                self.dot_bg_fifo[self.dot_bg_fifo_read] = 0
                 self.dot_bg_fifo_count = 1
                 return
         self.dot_fill_bg_fifo(
@@ -2607,7 +2473,7 @@ class Renderer:
             self.dot_n_sprites != 0
             and self.dot_x_counter < 160
             and (self.lcd._LCDC.sprite_enable or self.lcd._is_cgb_hardware())
-            and self.dot_sprite_x[self.dot_n_sprites - 1] == 0
+            and (self.dot_sprites[self.dot_n_sprites - 1] & 0xFF) == 0
         ):
             self.dot_mixer_stalled = True
             return
@@ -2622,9 +2488,10 @@ class Renderer:
             palette = 0
             bg_priority = False
         else:
-            pixel = self.dot_bg_fifo_pixel[self.dot_bg_fifo_read]
-            palette = self.dot_bg_fifo_palette[self.dot_bg_fifo_read]
-            bg_priority = self.dot_bg_fifo_priority[self.dot_bg_fifo_read] != 0
+            entry = self.dot_bg_fifo[self.dot_bg_fifo_read]
+            pixel = entry & 0b11
+            palette = (entry >> 2) & 0b111
+            bg_priority = (entry >> 5) & 1
             self.dot_bg_fifo_read = (self.dot_bg_fifo_read + 1) & 7
             self.dot_bg_fifo_count -= 1
 
@@ -2632,9 +2499,10 @@ class Renderer:
         sprite_pixel = 0
         sprite_palette = 0
         if self.dot_obj_fifo_count > 0:
-            sprite_pixel = self.dot_obj_fifo_pixel[self.dot_obj_fifo_read]
-            sprite_palette = self.dot_obj_fifo_palette[self.dot_obj_fifo_read]
-            sprite_bg_priority = self.dot_obj_fifo_bg_priority[self.dot_obj_fifo_read] != 0
+            sprite_entry = self.dot_obj_fifo[self.dot_obj_fifo_read]
+            sprite_pixel = sprite_entry & 0b11
+            sprite_palette = (sprite_entry >> 2) & 0b111
+            sprite_bg_priority = (sprite_entry >> 5) & 1
             self.dot_obj_fifo_read = (self.dot_obj_fifo_read + 1) & 7
             self.dot_obj_fifo_count -= 1
             if sprite_pixel and self.lcd._LCDC.sprite_enable:
@@ -2697,12 +2565,11 @@ class Renderer:
             color = self.lcd.BGP.palette_mem_rgb[shade]
         if not self.lcd.disable_renderer:
             self._screenbuffer[self.dot_ly, self.dot_screen_x] = color
-        attributes = 0
-        if bg_priority:
-            attributes |= BG_PRIORITY_FLAG
-        if raw_pixel == 0:
-            attributes |= COL0_FLAG
-        if not self.lcd.disable_renderer:
+            attributes = 0
+            if bg_priority:
+                attributes |= BG_PRIORITY_FLAG
+            if raw_pixel == 0:
+                attributes |= COL0_FLAG
             self._screenbuffer_attributes[self.dot_ly, self.dot_screen_x] = attributes
 
         if draw_sprite:
@@ -2731,20 +2598,27 @@ class Renderer:
         self.dot_x_counter = (self.dot_x_counter + 1) & 0xFF
         self.dot_screen_x += 1
 
+    def dot_last_pixel_current(self):
+        # True when the last pixel was output on the current dot: a register
+        # write landing now can still recolor it. The final pixels of the
+        # line are output a few dots into HBlank, so mode 0 counts too.
+        return (
+            (self.lcd._STAT._mode == 3 or self.lcd._STAT._mode == 0)
+            and self.dot_ly == self.lcd.LY
+            and self.dot_last_pixel_dot == self.dot_dots_elapsed
+        )
+
     def dot_fill_bg_fifo(self, lower, upper, palette, bg_priority, flip_x):
         self.dot_bg_fifo_count = 8
+        attrs = palette << 2 | (1 if bg_priority else 0) << 5
         if not flip_x:
             for i in range(8):
-                self.dot_bg_fifo_pixel[i] = (lower >> 7) | ((upper >> 7) << 1)
-                self.dot_bg_fifo_palette[i] = palette
-                self.dot_bg_fifo_priority[i] = 1 if bg_priority else 0
+                self.dot_bg_fifo[i] = ((lower >> 7) | ((upper >> 7) << 1)) | attrs
                 lower = (lower << 1) & 0xFF
                 upper = (upper << 1) & 0xFF
         else:
             for i in range(8):
-                self.dot_bg_fifo_pixel[i] = (lower & 1) | ((upper & 1) << 1)
-                self.dot_bg_fifo_palette[i] = palette
-                self.dot_bg_fifo_priority[i] = 1 if bg_priority else 0
+                self.dot_bg_fifo[i] = ((lower & 1) | ((upper & 1) << 1)) | attrs
                 lower >>= 1
                 upper >>= 1
 
@@ -2752,21 +2626,17 @@ class Renderer:
         # Pad the sprite FIFO to a full row before merging
         while self.dot_obj_fifo_count < 8:
             index = (self.dot_obj_fifo_read + self.dot_obj_fifo_count) & 7
-            self.dot_obj_fifo_pixel[index] = 0
-            self.dot_obj_fifo_palette[index] = 0
-            self.dot_obj_fifo_priority[index] = 0
-            self.dot_obj_fifo_bg_priority[index] = 0
+            self.dot_obj_fifo[index] = 0
             self.dot_obj_fifo_count += 1
+        packed = (palette << 2) | ((1 if bg_priority else 0) << 5) | (priority << 6)
         for i in range(7, -1, -1):
             pixel = (lower >> 7) | ((upper >> 7) << 1)
             # An X-flipped sprite scans its bitplane row in reverse order
             row_bit = i if flip_x else 7 - i
             target = (self.dot_obj_fifo_read + row_bit) & 7
-            if pixel != 0 and (self.dot_obj_fifo_pixel[target] == 0 or self.dot_obj_fifo_priority[target] > priority):
-                self.dot_obj_fifo_pixel[target] = pixel
-                self.dot_obj_fifo_palette[target] = palette
-                self.dot_obj_fifo_bg_priority[target] = 1 if bg_priority else 0
-                self.dot_obj_fifo_priority[target] = priority
+            entry = self.dot_obj_fifo[target]
+            if pixel != 0 and ((entry & 0b11) == 0 or (entry >> 6) > priority):
+                self.dot_obj_fifo[target] = pixel | packed
             lower = (lower << 1) & 0xFF
             upper = (upper << 1) & 0xFF
 
