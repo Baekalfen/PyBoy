@@ -389,7 +389,6 @@ cdef class Renderer:
     @cython.locals(win_match=bint)
     @cython.locals(
         limit=int,
-        window_enable=bint,
         may_activate=bint,
         wx=int,
         wdist=int,
@@ -433,13 +432,11 @@ cdef class Renderer:
         column=int,
         lower=uint8_t,
         upper=uint8_t,
-        window_enable=bint,
         window_triggered=bint,
         render=bint,
         bgmap=bint,
         winmap=bint,
         tdsel=bint,
-        objsize=bint,
         bg_enabled=bint,
         latched=bint,
         c0=uint32_t,
