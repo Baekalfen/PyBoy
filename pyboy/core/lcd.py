@@ -1101,11 +1101,6 @@ class LCDCRegister:
         self.cgb_master_priority  = self.background_enable # Different meaning on CGB
         # fmt: on
 
-        # All VRAM addresses are offset by 0x8000
-        # Following addresses are 0x9800 and 0x9C00
-        self.backgroundmap_offset = 0x1800 if self.backgroundmap_select == 0 else 0x1C00
-        self.windowmap_offset = 0x1800 if self.windowmap_select == 0 else 0x1C00
-
 
 COL0_FLAG = 0b01
 BG_PRIORITY_FLAG = 0b10
@@ -2709,16 +2704,6 @@ class Renderer:
     # ██       ██    ██  ██   ██
     #  ██████   ██████   ██████
     #
-
-    def _cgb_get_background_map_attributes(self, lcd, i):
-        tile_num = self.lcd.VRAM1[i]
-        palette = tile_num & 0b111
-        vbank = (tile_num >> 3) & 1
-        horiflip = (tile_num >> 5) & 1
-        vertflip = (tile_num >> 6) & 1
-        bg_priority = (tile_num >> 7) & 1
-
-        return palette, vbank, horiflip, vertflip, bg_priority
 
 
 class VBKregister:
