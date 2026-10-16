@@ -244,8 +244,7 @@ class LCD:
             not self._is_cgb_hardware()
             and old_lcdc & 0b1
             and not value & 0b1
-            and self.renderer.dot_last_pixel_current()
-            and (self.renderer.dot_last_pixel_x == 0 or self.renderer.dot_last_pixel_stalled_recovery)
+            and self.renderer.dot_last_pixel_first_of_line()
             and self.renderer.dot_last_pixel_raw >= 0
             and self.renderer.dot_last_pixel_sprite_raw < 0
         ):
@@ -260,8 +259,7 @@ class LCD:
             not self._is_cgb_hardware()
             and old_lcdc & 0b10
             and not value & 0b10
-            and self.renderer.dot_last_pixel_current()
-            and (self.renderer.dot_last_pixel_x == 0 or self.renderer.dot_last_pixel_stalled_recovery)
+            and self.renderer.dot_last_pixel_first_of_line()
             and self.renderer.dot_last_pixel_sprite_raw >= 0
         ):
             _raw = self.renderer.dot_last_pixel_raw
@@ -2232,15 +2230,18 @@ class Renderer:
             # Keep the high bitplane byte holding the last tile data read
             self.dot_tile_data_high = self.dot_tile_data_low
         if self.dot_screen_x != 160 and not self.lcd.disable_renderer:
-            # The PPU and LCD desynced; fill the rest of the line with the last color
+            # The PPU and LCD desynced; fill the rest of the line. An empty
+            # line takes the background color 0, a partial line repeats its
+            # last rendered pixel
             if self.dot_screen_x == 0:
                 color = self.lcd.bcpd.getcolor(0, 0) if self.lcd.cgb else self.lcd.BGP.getcolor(0)
-            for x in range(self.dot_screen_x, 160):
-                if self.dot_screen_x == 0:
+                for x in range(self.dot_screen_x, 160):
                     self._screenbuffer[self.dot_ly, x] = color
-                else:
+                    self._screenbuffer_attributes[self.dot_ly, x] = 0
+            else:
+                for x in range(self.dot_screen_x, 160):
                     self._screenbuffer[self.dot_ly, x] = self._screenbuffer[self.dot_ly, x - 1]
-                self._screenbuffer_attributes[self.dot_ly, x] = 0
+                    self._screenbuffer_attributes[self.dot_ly, x] = 0
         if self.dot_ly == 143:
             self.dot_window_line = 255
         if (
@@ -2260,10 +2261,10 @@ class Renderer:
         height = 16 if self.lcd._LCDC.sprite_height else 8
         self.dot_n_sprites = 0
         for index in range(40):
-            sprite_y = self.lcd.OAM[index * 4]
-            sprite_x = self.lcd.OAM[index * 4 + 1]
             if self.dot_n_sprites == 10:
                 return
+            sprite_y = self.lcd.OAM[index * 4]
+            sprite_x = self.lcd.OAM[index * 4 + 1]
             dy = sprite_y - 16
             if dy <= self.lcd.LY < dy + height:
                 # Sort the visible sprites by descending x (and priority)
@@ -2603,6 +2604,11 @@ class Renderer:
             and self.dot_last_pixel_dot == self.dot_dots_elapsed
         )
 
+    def dot_last_pixel_first_of_line(self):
+        # The recolorable pixels of a line are the first pixel of the line
+        # (x=0) and the first pixel replayed after a fetcher stall
+        return self.dot_last_pixel_current() and (self.dot_last_pixel_x == 0 or self.dot_last_pixel_stalled_recovery)
+
     def dot_fill_bg_fifo(self, lower, upper, palette, bg_priority, flip_x):
         self.dot_bg_fifo_count = 8
         attrs = palette << 2 | (1 if bg_priority else 0) << 5
@@ -2787,14 +2793,14 @@ class PaletteColorRegister:
         return rgb_color
 
     def set(self, val):
-        i_val = self.palette_mem[self.index_reg.getindex()]
+        index = self.index_reg.getindex()
+        i_val = self.palette_mem[index]
         if self.index_reg.hl:
-            self.palette_mem[self.index_reg.getindex()] = (i_val & 0x00FF) | (val << 8)
+            self.palette_mem[index] = (i_val & 0x00FF) | (val << 8)
         else:
-            self.palette_mem[self.index_reg.getindex()] = (i_val & 0xFF00) | val
+            self.palette_mem[index] = (i_val & 0xFF00) | val
 
-        cgb_color = self.palette_mem[self.index_reg.getindex()] & 0x7FFF
-        self.palette_mem_rgb[self.index_reg.getindex()] = self.cgb_to_rgb(cgb_color, self.index_reg.getindex())
+        self.palette_mem_rgb[index] = self.cgb_to_rgb(self.palette_mem[index] & 0x7FFF, index)
 
         # check for autoincrement after write
         self.index_reg.shouldincrement()
