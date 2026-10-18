@@ -172,7 +172,7 @@ def pokemon_trade(pokemon_blue_rom, primary, interrupt, shared_memory=None):
             pyboy.stop(save=False)
 
 
-def _run_pokemon_trade(pyboy, pokemon, primary):
+def _run_pokemon_trade(pyboy, pokemon, primary, checkpoint=None):
     _encode = pyboy.game_wrapper._encode_text
     _decode = lambda x: pyboy.game_wrapper._decode_text(x, skip_invalid=True)
     pyboy.set_emulation_speed(0)
@@ -262,7 +262,14 @@ def _run_pokemon_trade(pyboy, pokemon, primary):
     # Dialog
     _skip_dialogue(pyboy)
 
-    # trade_completed = [147, 177, 160, 163, 164, 383, 162, 174, 172, 175, 171, 164, 179, 164, 163, 231]
+    # Reuse the established trade flow for a stopped-worker checkpoint gate.
+    if checkpoint is not None and checkpoint():
+        return
+    _finish_pokemon_trade(pyboy)
+
+
+def _finish_pokemon_trade(pyboy):
+    _decode = lambda x: pyboy.game_wrapper._decode_text(x, skip_invalid=True)
     deadline = time.monotonic() + SERIAL_TEST_TIMEOUT
     while _decode(pyboy.tilemap_window[1:17, 14]) != "Trade completed!":
         if time.monotonic() >= deadline:
@@ -309,3 +316,85 @@ def test_serial_trade(pokemon_blue_rom, interrupt):
         shared_memory.close()
 
     assert process1.exitcode == 0
+
+
+@pytest.mark.parametrize("interrupt", [False, True])
+def test_serial_trade_cold_checkpoint(pokemon_blue_rom, interrupt):
+    """Cold-restore the existing integration flow during trade animation."""
+    if os.environ.get("GITHUB_ACTIONS"):
+        pytest.skip("Pokémon trade integration test is too slow on GitHub Actions")
+    from concurrent.futures import ThreadPoolExecutor
+    from tests.test_serial_checkpoint import together
+    import threading
+
+    buffer = SerialSharedMemoryBuffer()
+    peers = []
+    lock = threading.Lock()
+
+    def run(primary):
+        pyboy, pokemon = pyboy_bootstrap_pokemon_trade(
+            pokemon_blue_rom, {"serial_shared_memory": buffer, "serial_interrupt_based": interrupt}
+        )
+        with lock:
+            peers.append((primary, pyboy))
+        _run_pokemon_trade(pyboy, pokemon, primary, checkpoint=lambda: True)
+
+    try:
+        with ThreadPoolExecutor(2) as workers:
+            first = workers.submit(run, True)
+            deadline = time.monotonic() + SERIAL_TEST_TIMEOUT
+            while buffer.read(0) == 0:
+                if first.done():
+                    first.result()
+                if time.monotonic() > deadline:
+                    buffer.barrier.abort()
+                    raise AssertionError("First serial peer did not connect")
+                threading.Event().wait(0.001)
+            second = workers.submit(run, False)
+            first.result(timeout=SERIAL_TEST_TIMEOUT_TOTAL)
+            second.result(timeout=SERIAL_TEST_TIMEOUT_TOTAL)
+        peers.sort(reverse=True, key=lambda entry: entry[0])
+        checkpoint = buffer.save_state(*(peer for _, peer in peers))
+    finally:
+        for _, peer in peers:
+            peer.stop(save=False)
+        buffer.close()
+
+    fresh = SerialSharedMemoryBuffer()
+    restored = []
+    try:
+
+        def make():
+            return PyBoy(
+                pokemon_blue_rom,
+                window="null",
+                sound_emulated=False,
+                serial_shared_memory=fresh,
+                serial_interrupt_based=interrupt,
+            )
+
+        with ThreadPoolExecutor(2) as workers:
+            first = workers.submit(make)
+            deadline = time.monotonic() + SERIAL_TEST_TIMEOUT
+            while fresh.read(0) == 0:
+                if first.done():
+                    first.result()
+                if time.monotonic() > deadline:
+                    fresh.barrier.abort()
+                    raise AssertionError("Restored serial peer did not connect")
+                threading.Event().wait(0.001)
+            second = workers.submit(make)
+            restored = [first.result(timeout=5), second.result(timeout=5)]
+        fresh.load_state(*restored, checkpoint)
+        assert fresh.save_state(*restored) == checkpoint
+        together(
+            lambda: _finish_pokemon_trade(restored[0]),
+            lambda: _finish_pokemon_trade(restored[1]),
+            timeout=SERIAL_TEST_TIMEOUT_TOTAL,
+        )
+        assert restored[0].game_wrapper.party[1]["nickname"] == "CHARIZARD"
+        assert restored[1].game_wrapper.party[0]["nickname"] == "MEW"
+    finally:
+        for peer in restored:
+            peer.stop(save=False)
+        fresh.close()
