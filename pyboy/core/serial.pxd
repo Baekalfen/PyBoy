@@ -19,7 +19,7 @@ cdef uint64_t TRANSPORT_MASTER, HANDSHAKE_COMPLETE, CLOCK_MASTER, HANDSHAKE_STAR
 
 cdef class Serial:
     cdef uint64_t SB, SC
-    cdef bint cgb_mode
+    cdef bint cgb_mode, emulate
     cdef int64_t _cycles_to_interrupt
     cdef uint64_t last_cycles, clock, clock_target
     cdef bint transfer_enabled, double_speed, internal_clock

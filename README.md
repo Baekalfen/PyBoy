@@ -121,7 +121,7 @@ The [documentation homepage](https://docs.pyboy.dk/) shows how to interface with
 Performance
 ===========
 
-Performance is a priority for PyBoy, to make your AI training and scripts as fast as possible.
+Performance is a priority for PyBoy, to make your AI training and scripts as fast as possible. Use the fast-mode to allow less accurate emulation, in exchange for performance: `p = PyBoy(..., fast_mode=True)`.
 
 The easiest way to improve your performance, is to skip rendering of unnecessary frames. If you know your
 character takes X frames to move, or the game doesn't take input every frame, you can skip those to potentially triple

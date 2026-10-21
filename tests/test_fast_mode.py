@@ -1,0 +1,95 @@
+from io import BytesIO
+
+import pytest
+
+from pyboy import PyBoy
+from pyboy import __main__ as main
+from pyboy.utils import PyBoyInvalidOperationException
+
+
+def test_fast_mode_disables_sound_and_serial(default_rom):
+    pyboy = PyBoy(default_rom, window="null", fast_mode=True)
+    try:
+        assert pyboy.fast_mode
+
+        pyboy.memory[0xFF26] = 0x80
+        assert pyboy.memory[0xFF26] == 0
+
+        pyboy.memory[0xFF01] = 0x12
+        pyboy.memory[0xFF02] = 0x81
+        assert pyboy.memory[0xFF01] == 0xFF
+        assert not pyboy.memory[0xFF02] & 0x80
+
+        assert pyboy.tick(3, render=True, sound=True)
+    finally:
+        pyboy.stop(save=False)
+
+
+def test_fast_mode_serial_stub_ignores_loaded_transfer_state(default_rom):
+    accurate = PyBoy(default_rom, window="null")
+    fast = PyBoy(default_rom, window="null", fast_mode=True)
+    try:
+        accurate.memory[0xFF01] = 0x12
+        accurate.memory[0xFF02] = 0x81
+        assert accurate.memory[0xFF02] & 0x80
+
+        state = BytesIO()
+        accurate.save_state(state)
+        state.seek(0)
+        fast.load_state(state)
+        assert fast.memory[0xFF01] == 0xFF
+        assert not fast.memory[0xFF02] & 0x80
+
+        fast.memory[0xFF01] = 0x34
+        fast.memory[0xFF02] = 0x81
+        assert fast.memory[0xFF01] == 0xFF
+        assert not fast.memory[0xFF02] & 0x80
+
+        fast.tick(1, render=False, sound=False)
+        assert not fast.memory[0xFF02] & 0x80
+        assert not fast.memory[0xFF0F] & 0x08
+    finally:
+        accurate.stop(save=False)
+        fast.stop(save=False)
+
+
+def test_fast_mode_is_opt_in(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+    try:
+        assert not pyboy.fast_mode
+        assert pyboy.memory[0xFF26] == 0x70
+    finally:
+        pyboy.stop(save=False)
+
+
+def test_fast_mode_rejects_serial_shared_memory(default_rom):
+    with pytest.raises(PyBoyInvalidOperationException, match="Serial shared memory"):
+        PyBoy(default_rom, window="null", fast_mode=True, serial_shared_memory=object())
+
+
+def test_fast_mode_pcm_reads_remain_silent_when_loading_sound_state(default_rom):
+    accurate = PyBoy(default_rom, window="null", cgb=True)
+    fast = PyBoy(default_rom, window="null", cgb=True, fast_mode=True)
+    try:
+        accurate.memory[0xFF26] = 0x80
+        accurate.memory[0xFF30] = 0xAB
+        accurate.memory[0xFF1A] = 0x80
+        accurate.memory[0xFF1C] = 0x20
+        accurate.memory[0xFF1D] = 0xE6
+        accurate.memory[0xFF1E] = 0x83
+        accurate.tick(1, True)
+        assert accurate.memory[0xFF77] & 0x0F == 0x0B
+
+        state = BytesIO()
+        accurate.save_state(state)
+        state.seek(0)
+        fast.load_state(state)
+        assert fast.memory[0xFF77] == 0
+    finally:
+        accurate.stop(save=False)
+        fast.stop(save=False)
+
+
+def test_cli_fast_mode_flag(default_rom):
+    args = main.parser.parse_args([str(default_rom), "--fast"])
+    assert args.fast_mode

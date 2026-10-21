@@ -428,10 +428,14 @@ class Sound:
         )
 
     def pcm12(self):
+        if not self.emulate:
+            return 0
         # NOTE: Volume can apparantly not exceed 15?
         return self.sweepchannel.sample() & 0xF | ((self.tonechannel.sample() & 0xF) << 4)
 
     def pcm34(self):
+        if not self.emulate:
+            return 0
         # NOTE: Volume can apparantly not exceed 15?
         return self.wavechannel.sample() & 0xF | ((self.noisechannel.sample() & 0xF) << 4)
 
