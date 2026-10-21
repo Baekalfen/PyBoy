@@ -56,6 +56,10 @@ class LCD:
     def __init__(self, cgb, cgb_mode, color_palette, cgb_color_palette, randomize=False):
         self.VRAM0 = array("B", [0] * VIDEO_RAM)
         self.OAM = array("B", [0] * OBJECT_ATTRIBUTE_MEMORY)
+        self.gpu_memory_tracking_enabled = False
+        self.gpu_vram0_generation = 0
+        self.gpu_vram1_generation = 0
+        self.gpu_oam_generation = 0
         self.disable_renderer = False
 
         if randomize:
@@ -1001,6 +1005,17 @@ class LCD:
 
         # The dot-accurate renderer cannot resume a partially rendered line
         self.renderer.dot_ly = -1
+        self.gpu_vram0_generation += 1
+        self.gpu_vram1_generation += 1
+        self.gpu_oam_generation += 1
+
+    def mark_vram_dirty(self, bank):
+        if not self.gpu_memory_tracking_enabled:
+            return
+        if bank == 0:
+            self.gpu_vram0_generation += 1
+        else:
+            self.gpu_vram1_generation += 1
 
     def getwindowpos(self):
         return (self.WX - 7, self.WY)
@@ -1135,6 +1150,9 @@ class FastLCD(LCD):
                     self._scanlineparameters[self.LY][2] = self.WX
                     self._scanlineparameters[self.LY][3] = self.WY
                     self._scanlineparameters[self.LY][4] = self.renderer.wy_activated_frame
+                    if self.LY == ROWS - 1 and not self.disable_renderer and self.renderer.gpu_render_enabled():
+                        with cython.gil:
+                            self.renderer.prefetch_gpu_frame()
                 elif self._STAT._mode == 1:
                     self.clock_target += 456
                     self.next_stat_mode = 1
@@ -1150,6 +1168,9 @@ class FastLCD(LCD):
                         self.renderer.wy_activated_frame = False
                         if self.first_frame:
                             self.renderer.blank_screen()
+                        if not self.disable_renderer and self.renderer.gpu_render_enabled():
+                            with cython.gil:
+                                self.renderer.render_gpu_frame()
             else:
                 self.frame_done = True
                 self.clock %= FRAME_CYCLES
@@ -3184,6 +3205,50 @@ class Renderer:
     def render_frame(self):
         pass
 
+    def set_gpu_frame_renderer(self, frame_renderer):
+        self._gpu_frame_renderer = frame_renderer
+        self._gpu_render_error = None
+
+    def prefetch_gpu_frame(self):
+        frame_renderer = self._gpu_frame_renderer
+        if frame_renderer is None or getattr(getattr(frame_renderer, "device", None), "type", None) != "cuda":
+            return
+        generations = (
+            self.lcd.gpu_vram0_generation,
+            self.lcd.gpu_vram1_generation,
+            self.lcd.gpu_oam_generation,
+        )
+        if not frame_renderer.needs_memory_prefetch(generations):
+            return
+
+        get_prefetch_state = getattr(self, "get_gpu_prefetch_state", None)
+        if get_prefetch_state is None:
+            return
+        try:
+            frame_renderer.prefetch_memory(get_prefetch_state())
+        except Exception as error:
+            self._gpu_render_error = error
+
+    def render_gpu_frame(self):
+        if self._gpu_frame_renderer is None:
+            return
+        try:
+            self._gpu_frame_renderer.render(getattr(self, "get_gpu_render_state")())
+        except Exception as error:
+            self._gpu_render_error = error
+        else:
+            self._gpu_render_generation += 1
+
+    def take_gpu_render_error(self):
+        error = self._gpu_render_error
+        self._gpu_render_error = None
+        return error
+
+    def get_gpu_render_generation(self):
+        return self._gpu_render_generation
+
+    def gpu_render_enabled(self):
+        return 0
 
 class TilemapView:
     def __init__(self):
@@ -3206,10 +3271,18 @@ class TilemapView:
 class FastRenderer(Renderer):
     def __init__(self, lcd, cgb):
         Renderer.__init__(self, lcd, cgb)
+        self._gpu_render_enabled = False
         self._background_dirty_tiles_raw = array("B", [0] * (TILES * 2))
         self._background_dirty_tiles = memoryview(self._background_dirty_tiles_raw)
         self._background_view = TilemapView()
         self._window_view = TilemapView()
+        self._gpu_vram0_snapshot = None
+        self._gpu_vram1_snapshot = None
+        self._gpu_oam_snapshot = None
+        self._gpu_empty_vram = bytes(VIDEO_RAM)
+        self._gpu_vram0_generation = 0
+        self._gpu_vram1_generation = 0
+        self._gpu_oam_generation = 0
 
     def _update_tilemap_view(self, view, map_offset):
         dirty = self._background_view_dirty or view.dirty
@@ -3413,7 +3486,7 @@ class FastRenderer(Renderer):
         self.fast_scanline_sprites(y)
 
     def render_frame(self):
-        if self.lcd.disable_renderer:
+        if self.lcd.disable_renderer or self._gpu_render_enabled:
             return
 
         if not self.lcd._LCDC.lcd_enable:
@@ -3433,6 +3506,113 @@ class FastRenderer(Renderer):
             self.render_scanline(y, window_line)
 
         self.ly_window = -1
+
+    def get_background_view_buffer(self):
+        return self._background_view.pixels_raw
+
+    def get_gpu_prefetch_state(self):
+        lcd = self.lcd
+        lcd.gpu_memory_tracking_enabled = True
+        cgb = self.cgb
+
+        if self._gpu_vram0_snapshot is None or self._gpu_vram0_generation != lcd.gpu_vram0_generation:
+            if cython.compiled:
+                self._gpu_vram0_snapshot = _bytes_from_array(cython.address(lcd.VRAM0[0]), VIDEO_RAM)
+            else:
+                self._gpu_vram0_snapshot = bytes(lcd.VRAM0)
+            self._gpu_vram0_generation = lcd.gpu_vram0_generation
+        if cgb:
+            if self._gpu_vram1_snapshot is None or self._gpu_vram1_generation != lcd.gpu_vram1_generation:
+                if cython.compiled:
+                    self._gpu_vram1_snapshot = _bytes_from_array(cython.address(lcd.VRAM1[0]), VIDEO_RAM)
+                else:
+                    self._gpu_vram1_snapshot = bytes(lcd.VRAM1)
+                self._gpu_vram1_generation = lcd.gpu_vram1_generation
+            vram1 = self._gpu_vram1_snapshot
+        else:
+            vram1 = self._gpu_empty_vram
+        if self._gpu_oam_snapshot is None or self._gpu_oam_generation != lcd.gpu_oam_generation:
+            if cython.compiled:
+                self._gpu_oam_snapshot = _bytes_from_array(cython.address(lcd.OAM[0]), OBJECT_ATTRIBUTE_MEMORY)
+            else:
+                self._gpu_oam_snapshot = bytes(lcd.OAM)
+            self._gpu_oam_generation = lcd.gpu_oam_generation
+        vram0 = self._gpu_vram0_snapshot
+        oam = self._gpu_oam_snapshot
+
+        return {
+            "vram0": vram0,
+            "vram1": vram1,
+            "oam": oam,
+            "vram0_generation": lcd.gpu_vram0_generation,
+            "vram1_generation": lcd.gpu_vram1_generation,
+            "oam_generation": lcd.gpu_oam_generation,
+        }
+
+    def get_gpu_blank_render_state(self):
+        lcd = self.lcd
+        dmg_palettes = []
+        for palette in (lcd.BGP, lcd.OBP0, lcd.OBP1):
+            dmg_palettes.append(tuple(palette.palette_source_rgb))
+
+        return {
+            "lcdc": lcd._LCDC.value,
+            "background_palette_register": lcd.BGP.value,
+            "dmg_palettes": tuple(dmg_palettes),
+        }
+
+    def get_gpu_render_state(self):
+        state = self.get_gpu_prefetch_state()
+        lcd = self.lcd
+        if cython.compiled:
+            scanlines = _bytes_from_array(cython.address(lcd._scanlineparameters[0][0]), ROWS * 5)
+        else:
+            scanline_buffer = bytearray(ROWS * 5)
+            for y in range(ROWS):
+                for i in range(5):
+                    scanline_buffer[y * 5 + i] = lcd._scanlineparameters[y][i]
+            scanlines = bytes(scanline_buffer)
+
+        cgb = self.cgb
+        dmg_palettes = []
+        for palette in (lcd.BGP, lcd.OBP0, lcd.OBP1):
+            colors = []
+            for i in range(4):
+                colors.append(palette.palette_source_rgb[i])
+            dmg_palettes.append(tuple(colors))
+
+        background_color_palette = ()
+        object_color_palette = ()
+        if cgb:
+            background_colors = []
+            object_colors = []
+            for i in range(32):
+                background_colors.append(lcd.bcpd.palette_mem[i])
+                object_colors.append(lcd.ocpd.palette_mem[i])
+            background_color_palette = tuple(background_colors)
+            object_color_palette = tuple(object_colors)
+
+        state.update(
+            {
+                "scanlines": scanlines,
+                "cgb": cgb,
+                "lcdc": lcd._LCDC.value,
+                "background_map_offset": lcd._LCDC.backgroundmap_offset,
+                "window_map_offset": lcd._LCDC.windowmap_offset,
+                "background_palette_register": lcd.BGP.value,
+                "object_palette_registers": (lcd.OBP0.value, lcd.OBP1.value),
+                "dmg_palettes": tuple(dmg_palettes),
+                "background_color_palette": background_color_palette,
+                "object_color_palette": object_color_palette,
+            }
+        )
+        return state
+
+    def gpu_render_enabled(self):
+        return self._gpu_render_enabled
+
+    def set_gpu_render_enabled(self, enabled):
+        self._gpu_render_enabled = bool(enabled)
 
 
 class VBKregister:

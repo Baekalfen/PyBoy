@@ -169,10 +169,13 @@ class WindowSDL2(PyBoyWindowPlugin):
     def __init__(self, pyboy, mb, pyboy_argv):
         super().__init__(pyboy, mb, pyboy_argv)
 
-        self.sgb_border_enabled = pyboy_argv.get("sgb_border", False)
-
         if not self.enabled():
             return
+
+        self._initialize_video_audio(self._init_video)
+
+    def _initialize_video_audio(self, video_initializer):
+        self.sgb_border_enabled = self.pyboy_argv.get("sgb_border", False)
 
         if sdl2.SDL_InitSubSystem(sdl2.SDL_INIT_VIDEO | sdl2.SDL_INIT_GAMECONTROLLER) < 0:
             raise PyBoyAssertException("SDL_InitSubSystem video failed: %s", sdl2.SDL_GetError().decode())
@@ -192,6 +195,13 @@ class WindowSDL2(PyBoyWindowPlugin):
             render_width = COLS
             render_height = ROWS
 
+        sdl2.SDL_SetHint(sdl2.SDL_HINT_RENDER_VSYNC, b"0")
+        video_initializer(window_width, window_height, render_width, render_height)
+
+        # Helps Cython access mb.sound
+        self.init_audio(self.mb)
+
+    def _init_video(self, window_width, window_height, render_width, render_height):
         self._window = sdl2.SDL_CreateWindow(
             b"PyBoy",
             sdl2.SDL_WINDOWPOS_CENTERED,
@@ -200,8 +210,6 @@ class WindowSDL2(PyBoyWindowPlugin):
             window_height,
             sdl2.SDL_WINDOW_RESIZABLE,
         )
-
-        sdl2.SDL_SetHint(sdl2.SDL_HINT_RENDER_VSYNC, b"0")
         self._sdlrenderer = sdl2.SDL_CreateRenderer(self._window, -1, sdl2.SDL_RENDERER_ACCELERATED)
 
         sdl2.SDL_RenderSetLogicalSize(self._sdlrenderer, render_width, render_height)
@@ -210,9 +218,6 @@ class WindowSDL2(PyBoyWindowPlugin):
         )
 
         sdl2.SDL_ShowWindow(self._window)
-
-        # Helps Cython access mb.sound
-        self.init_audio(mb)
 
     def init_audio(self, mb):
         if mb.sound.emulate:
@@ -272,6 +277,10 @@ class WindowSDL2(PyBoyWindowPlugin):
         return frames_buffered
 
     def post_tick(self):
+        self._render_screen()
+        self._post_audio()
+
+    def _render_screen(self):
         if self.sgb_border_enabled and self.mb.sgb.enabled and self.renderer:
             try:
                 frame = self.mb.sgb_border.get_composited_frame(self.renderer._screenbuffer_raw)
@@ -290,6 +299,7 @@ class WindowSDL2(PyBoyWindowPlugin):
         sdl2.SDL_RenderPresent(self._sdlrenderer)
         sdl2.SDL_RenderClear(self._sdlrenderer)
 
+    def _post_audio(self):
         if self.sound_support and not self.sound_paused:
             queued_bytes = sdl2.SDL_GetQueuedAudioSize(self.sound_device)
 

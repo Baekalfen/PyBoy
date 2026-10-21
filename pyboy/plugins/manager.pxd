@@ -8,6 +8,7 @@ from pyboy.plugins.base_plugin cimport PyBoyGameWrapper
 
 # imports
 from pyboy.plugins.window_sdl2 cimport WindowSDL2
+from pyboy.plugins.window_metal cimport WindowMetal
 from pyboy.plugins.window_open_gl cimport WindowOpenGL
 from pyboy.plugins.window_glfw cimport WindowGLFW
 from pyboy.plugins.window_null cimport WindowNull
@@ -37,6 +38,7 @@ cdef class PluginManager:
     cdef bint generic_game_wrapper_enabled
     # plugin_cdef
     cdef public WindowSDL2 window_sdl2
+    cdef public WindowMetal window_metal
     cdef public WindowOpenGL window_open_gl
     cdef public WindowGLFW window_glfw
     cdef public WindowNull window_null
@@ -57,6 +59,7 @@ cdef class PluginManager:
     cdef public GameWrapperPokemonPinball game_wrapper_pokemon_pinball
     cdef public GameWrapper2048 game_wrapper2048
     cdef bint window_sdl2_enabled
+    cdef bint window_metal_enabled
     cdef bint window_open_gl_enabled
     cdef bint window_glfw_enabled
     cdef bint window_null_enabled

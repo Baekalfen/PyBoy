@@ -65,7 +65,9 @@ packages = ["pyboy", "pyboy.api", "pyboy.core", "pyboy.core.cartridge", "pyboy.l
     "**/*.pyx",
     "**/*.pxd",
     "**/bootrom*.bin",
-    "**/font.txt"
+    "**/font.txt",
+    "**/*.metal",
+    "**/*.mm"
 ]
 
 [tool.pytest.ini_options]
