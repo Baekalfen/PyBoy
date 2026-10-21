@@ -32,10 +32,8 @@ cpdef uint32_t rgb_to_bgr(uint32_t) noexcept
 
 cdef inline int _tiledata_addr(uint8_t, bint, int) noexcept nogil
 
-@final
 cdef class LCD:
     cdef bint disable_renderer
-    cdef bint fast_mode
     cdef uint8_t[8 * 1024] VRAM0
     cdef uint8_t[0xA0] OAM
 
@@ -62,6 +60,7 @@ cdef class LCD:
     cdef uint8_t LY
     cdef uint8_t LYC
     cdef int16_t mode3_extension
+    cdef int16_t mode3_adjustment
     cdef uint64_t clock
     cdef uint64_t clock_target
     cdef LCDCRegister _LCDC
@@ -78,7 +77,6 @@ cdef class LCD:
     @final
     cdef void switch_cgb(self, bint) noexcept with gil
 
-    @final
     @cython.locals(
         interrupt_flag=uint8_t,
         bx=int,
@@ -104,11 +102,7 @@ cdef class LCD:
     @final
     cdef void write_wx(self, uint8_t) noexcept nogil
 
-    @final
     cdef int64_t cycles_to_mode0(self) noexcept nogil
-    @final
-    @cython.locals(y=int, scx=uint8_t, scy=uint8_t, wx=uint8_t, wy=uint8_t, window_active=bint)
-    cdef void _render_fast_frame(self) noexcept nogil
     @final
     cdef inline bint _is_cgb_hardware(self) noexcept nogil
     @final
@@ -136,6 +130,7 @@ cdef class LCD:
     @cython.locals(penalty=int)
     cdef inline int _mode3_timing_adjustment(self, int) noexcept nogil
 
+    @final
     cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface, int) except -1
 
@@ -153,6 +148,21 @@ cdef class LCD:
     cdef PaletteColorRegister bcpd
     cdef PaletteIndexRegister ocps
     cdef PaletteColorRegister ocpd
+
+cdef class FastLCD(LCD):
+    @cython.locals(
+        interrupt_flag=uint8_t,
+        vblank_stat_pretriggered=bint,
+        previous_mode=uint8_t,
+        bx=int,
+        by=int,
+        wx=int,
+        wy=int,
+        cycles_to_interrupt=int64_t,
+    )
+    cdef uint8_t tick(self, uint64_t) noexcept nogil
+    cdef int64_t cycles_to_mode0(self) noexcept nogil
+    cdef int load_state(self, IntIOInterface, int) except -1
 
 @final
 cdef class PaletteRegister:
@@ -204,8 +214,9 @@ cdef class LCDCRegister:
     cdef bint background_enable
     cdef bint cgb_master_priority
 
+    cdef uint16_t backgroundmap_offset
+    cdef uint16_t windowmap_offset
 
-@final
 cdef class Renderer:
     cdef LCD lcd
     cdef uint8_t[:] _tilecache_state, _spritecache_state
@@ -223,7 +234,9 @@ cdef class Renderer:
     cdef uint64_t[:, :] _tilecache_64, _spritecache_64
     cdef uint32_t[:] colorcode_table
 
+    cdef int[10] sprites_to_render
     cdef bint wy_activated_frame
+    cdef int ly_window
 
     # Dot-accurate renderer: fetcher pipeline and pixel FIFOs that reproduce
     # mid-scanline register change behavior
@@ -520,12 +533,83 @@ cdef class Renderer:
     )
     cdef int _dot_tiledat_addr(self, int) noexcept nogil
 
+    @final
     cdef void invalidate_tile(self, int, int) noexcept nogil
 
+    @final
     cdef void blank_screen(self) noexcept nogil
 
     cdef void blank_screen_color(self, uint32_t color) noexcept nogil
 
+    @final
+    @cython.locals(
+        bx=int,
+        by=int,
+        wx=int,
+        wy=int,
+        palette=uint8_t,
+        vbank=bint,
+        horiflip=bint,
+        vertflip=bint,
+        bg_priority=bint,
+        xx=int,
+        yy=int,
+        tilecache=uint8_t[:,:],
+        bg_priority_apply=uint32_t,
+        col0=uint8_t,
+        pixel=uint32_t,
+    )
+    cdef void scanline(self, int) noexcept nogil
+    @final
+    @cython.locals(
+        bx=int,
+        by=int,
+        wx=int,
+        wy=int,
+        palette=uint8_t,
+        vbank=bint,
+        horiflip=bint,
+        vertflip=bint,
+        bg_priority=bint,
+        xx=int,
+        yy=int,
+        tilecache=uint8_t[:,:],
+        bg_priority_apply=uint32_t,
+        col0=uint8_t,
+        pixel=uint32_t,
+    )
+    cdef void cgb_scanline(self, int) noexcept nogil
+
+    @final
+    @cython.locals(
+        tile_num = uint8_t,
+        palette = uint8_t,
+        vbank = uint8_t,
+        horiflip = uint8_t,
+        vertflip = uint8_t,
+        bg_priority = uint8_t,
+    )
+    cdef inline (int, int, int, int, int) _cgb_get_background_map_attributes(self, LCD, int) noexcept nogil
+    @final
+    @cython.locals(tile_addr=uint64_t, tile=int)
+    cdef inline (int, int, uint16_t) _get_tile(self, uint8_t, uint8_t, uint16_t, LCD) noexcept nogil
+    @final
+    cdef inline (int, int, uint8_t, bint, uint32_t, bint) _cgb_get_tile(self, uint8_t, uint8_t, uint16_t, LCD) noexcept nogil
+    @final
+    @cython.locals(col0=uint8_t)
+    cdef inline void _pixel(self, int, uint32_t, int, int, int, int, uint32_t) noexcept nogil
+    @final
+    cdef int scanline_background(self, int, int, int, int, int, LCD) noexcept nogil
+    @final
+    cdef int scanline_window(self, int, int, int, int, int, LCD) noexcept nogil
+    @final
+    cdef int cgb_scanline_background(self, int, int, int, int, int, LCD) noexcept nogil
+    @final
+    cdef int cgb_scanline_window(self, int, int, int, int, int, LCD) noexcept nogil
+    @final
+    cdef int scanline_blank(self, int, int, int, LCD) noexcept nogil
+
+    @final
     @cython.locals(
         spriteheight=int,
         spritecount=int,
@@ -549,11 +633,16 @@ cdef class Renderer:
         bgmappriority=bint,
         sprite_cache_no=int,
     )
+    cdef void scanline_sprites(self, int, uint32_t[:,:], uint8_t[:,:], bint) noexcept nogil
+    @final
+    cdef void sort_sprites(self, int) noexcept nogil
+
     cdef void clear_cache(self) noexcept nogil
     cdef inline void _clear_cache(self, uint8_t[:], int) noexcept nogil
     cdef void clear_tilecache(self, int) noexcept nogil
+    @final
     cdef void clear_spritecache(self, int) noexcept nogil
-    # @final
+    @final
     @cython.locals(
         x=int,
         t=int,
@@ -579,11 +668,27 @@ cdef class Renderer:
     )
     cdef inline void update_spritecache(self, int, LCD, int, int) noexcept nogil
 
+    @final
     @cython.locals(colorcode_low=uint64_t, colorcode_high=uint64_t)
     cdef inline uint64_t colorcode(self, uint64_t, uint64_t) noexcept nogil
 
+    cdef void render_frame(self) noexcept nogil
+
+    @final
     cdef int save_state(self, IntIOInterface) except -1
+    @final
     cdef int load_state(self, IntIOInterface, int) except -1
+
+cdef class FastRenderer(Renderer):
+    @cython.locals(
+        y=int,
+        scx=uint8_t,
+        scy=uint8_t,
+        wx=uint8_t,
+        wy=uint8_t,
+        window_active=bint,
+    )
+    cdef void render_frame(self) noexcept nogil
 
 @final
 cdef class VBKregister:

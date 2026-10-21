@@ -88,6 +88,38 @@ def test_fast_mode_pcm_reads_remain_silent_when_loading_sound_state(default_rom)
     finally:
         accurate.stop(save=False)
         fast.stop(save=False)
+def test_fast_mode_state_round_trip(default_rom):
+    pyboy = PyBoy(default_rom, window="null", fast_mode=True)
+    try:
+        pyboy.set_emulation_speed(0)
+        pyboy.tick(2, render=False, sound=False)
+        saved_state = BytesIO()
+        pyboy.save_state(saved_state)
+        saved_state.seek(0)
+        pyboy.load_state(saved_state)
+        assert pyboy.tick(1, render=False, sound=False)
+    finally:
+        pyboy.stop(save=False)
+
+
+def test_fast_mode_keeps_pokemon_functional(pokemon_blue_rom):
+    pyboy = PyBoy(pokemon_blue_rom, window="null", fast_mode=True)
+    try:
+        pyboy.set_emulation_speed(0)
+        pyboy.game_wrapper.start_game()
+
+        pyboy.game_wrapper.set_event_flag("got_pokedex")
+        pyboy.button("start", 10)
+        pyboy.tick(30, False, False)
+        assert pyboy.tilemap_window[12:19, 2] == pyboy.game_wrapper._encode_text("POKéDEX")
+
+        pyboy.button("start", 10)
+        pyboy.tick(30, False, False)
+        pyboy.game_wrapper.warp("viridian_pokecenter")
+        pyboy.tick(120, False, False)
+        assert pyboy.memory[0xD35E] == 0x29
+    finally:
+        pyboy.stop(save=False)
 
 
 def test_cli_fast_mode_flag(default_rom):
