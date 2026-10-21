@@ -7,6 +7,7 @@ from array import array
 from ctypes import c_void_p
 from random import getrandbits
 
+import cython
 import pyboy
 from pyboy.utils import PyBoyException, INTR_VBLANK, INTR_LCDC, FRAME_CYCLES
 from pyboy.api.constants import ROWS, COLS, TILES
@@ -515,13 +516,13 @@ class LCD:
 
         vblank_stat_pretriggered = False
 
-        if self._should_pretrigger_vblank_stat() and self.clock >= self.clock_target - 4:
+        if cython.unlikely(self._should_pretrigger_vblank_stat() and self.clock >= self.clock_target - 4):
             # CGB hardware keeps this timing after switching to DMG compatibility mode.
             self.stat_transition = STAT_TRANSITION_VBLANK_PRETRIGGERED
             interrupt_flag |= INTR_LCDC
 
         if self.clock >= self.clock_target:
-            if self._LCDC.lcd_enable and self.reset:
+            if cython.unlikely(self._LCDC.lcd_enable and self.reset):
                 self.reset = False
                 self.frame_done = True
 
@@ -556,7 +557,9 @@ class LCD:
                 self.stat_transition = STAT_TRANSITION_LY153_WRAP
                 self.clock_target += 441
 
-            elif self._LCDC.lcd_enable and (self.LY == 153 or self.stat_transition == STAT_TRANSITION_LY153_WRAP):
+            elif cython.unlikely(
+                self._LCDC.lcd_enable and (self.LY == 153 or self.stat_transition == STAT_TRANSITION_LY153_WRAP)
+            ):
                 # The dot renderer's pipeline state is dead once the frame
                 # wraps; neutralize it so a state saved here loads into a
                 # fresh renderer identically. The mode-3 anchors are dead
@@ -660,7 +663,7 @@ class LCD:
                     # tests/test_daid.py]
                     self.stat_mode_lag_bits = self._STAT._mode & 0b11
                     self.stat_mode_lag_until = self.clock_target + 2
-                if self.stat_transition == STAT_TRANSITION_VBLANK_PRETRIGGERED:
+                if cython.unlikely(self.stat_transition == STAT_TRANSITION_VBLANK_PRETRIGGERED):
                     self.stat_transition = STAT_TRANSITION_NONE
                     vblank_stat_pretriggered = True
                 stat_irq = self._STAT.set_mode(self.next_stat_mode)

@@ -3,6 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 import pyboy
+import cython
 
 from . import opcodes
 from pyboy.utils import INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW
@@ -172,7 +173,7 @@ class CPU:
                     return 0
                 # The pause ended mid-window; execute the rest of it below
 
-        if self.check_interrupts():
+        if cython.unlikely(self.check_interrupts()):
             self.halted = False
 
         if self.halted and self.interrupt_queued:
@@ -194,21 +195,21 @@ class CPU:
             # NOTE: This is a very rare edge-case
             while self.cycles < _target:
                 self.fetch_and_execute_dma()
-                if self.bail:  # Possible cycles-target changes
+                if cython.unlikely(self.bail):  # Possible cycles-target changes
                     break
         else:
             while self.cycles < _target:
                 self.fetch_and_execute()
-                if self.bail:  # Possible cycles-target changes
+                if cython.unlikely(self.bail):  # Possible cycles-target changes
                     break
 
     def check_interrupts(self):
-        if self.interrupt_queued or self.interrupt_enable_delay:
+        if cython.unlikely(self.interrupt_queued or self.interrupt_enable_delay):
             # Interrupt already queued. This happens only when using a debugger.
             return False
 
         raised_and_enabled = (self.interrupts_flag_register & 0b11111) & (self.interrupts_enabled_register & 0b11111)
-        if raised_and_enabled:
+        if cython.unlikely(raised_and_enabled):
             # Clear interrupt flag
             if self.halted and not self.halted_during_ei:
                 self.PC += 1  # Escape HALT on return
