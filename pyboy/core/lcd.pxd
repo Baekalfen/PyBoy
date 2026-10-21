@@ -15,6 +15,39 @@ from pyboy cimport utils
 from pyboy.logging.logging cimport Logger
 from pyboy.utils cimport IntIOInterface
 
+cdef extern from *:
+    """
+    #include <stdint.h>
+    #if defined(_MSC_VER)
+    #include <intrin.h>
+    static inline unsigned int pyboy_sprite_pixel_index(uint64_t mask) {
+        unsigned long index;
+        _BitScanForward64(&index, mask);
+        return (unsigned int)(index >> 3);
+    }
+    #else
+    static inline unsigned int pyboy_sprite_pixel_index(uint64_t mask) {
+        unsigned int index = (unsigned int)__builtin_ctzll(mask);
+    #if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+        return 7 - (index >> 3);
+    #else
+        return index >> 3;
+    #endif
+    }
+    #endif
+    """
+    unsigned int pyboy_sprite_pixel_index(uint64_t) noexcept nogil
+
+cdef inline uint8_t _sprite_row_color_code(uint64_t sprite_row, int dx) noexcept nogil:
+    cdef uint8_t* color_codes = <uint8_t*>&sprite_row
+    return color_codes[dx]
+
+# Collapse each two-bit color byte into one opacity bit.
+cdef inline uint64_t _sprite_row_opaque_mask(uint64_t sprite_row) noexcept nogil:
+    return (sprite_row | (sprite_row >> 1)) & <uint64_t>0x0101010101010101
+
+cdef inline bint _sprite_row_is_fully_opaque(uint64_t opaque_mask) noexcept nogil:
+    return opaque_mask == <uint64_t>0x0101010101010101
 
 cdef uint8_t INTR_VBLANK, INTR_LCDC
 cdef uint16_t LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGP, OBP0, OBP1, WY, WX
@@ -99,6 +132,7 @@ cdef class LCD:
 
     @final
     cdef void switch_cgb(self, bint) noexcept with gil
+    cpdef void mark_vram_dirty(self, uint8_t) noexcept
 
     @cython.locals(
         interrupt_flag=uint8_t,
@@ -192,6 +226,7 @@ cdef class PaletteRegister:
     cdef uint8_t value
     cdef uint32_t[4] lookup
     cdef uint32_t[4] palette_mem_rgb
+    cdef object palette_source_rgb
 
     @final
     @cython.locals(x=uint16_t)
@@ -636,6 +671,35 @@ cdef class Renderer:
     cdef int cgb_scanline_window(self, int, int, int, int, int, LCD, int) noexcept nogil
     @final
     cdef int scanline_blank(self, int, int, int, LCD) noexcept nogil
+    @final
+    cdef void fast_scanline(self, int, int, int, int, bint, int) noexcept nogil
+    @final
+    @cython.locals(
+        ly=int,
+        n=int,
+        y=int,
+        x=int,
+        spriteheight=int,
+        tileindex=int,
+        attributes=int,
+        xflip=bint,
+        yflip=bint,
+        palette=uint8_t,
+        sprite_cache_no=int,
+        dy=int,
+        dx=int,
+        yy=int,
+        xx=int,
+        color_code=uint8_t,
+        pixel=uint32_t,
+        sprite_row=uint64_t,
+        opaque_mask=uint64_t,
+        bg_attributes=uint8_t,
+        sprite_visible=bint,
+        sprite_enabled=bint,
+        cgb_master_priority=bint,
+    )
+    cdef void fast_scanline_sprites(self, int) noexcept nogil
 
     @final
     @cython.locals(
@@ -664,28 +728,6 @@ cdef class Renderer:
     cdef void scanline_sprites(self, int, uint32_t[:,:], uint8_t[:,:], bint) noexcept nogil
     @final
     cdef void sort_sprites(self, int) noexcept nogil
-
-    @final
-    @cython.locals(
-        ly=int,
-        n=int,
-        y=int,
-        x=int,
-        spriteheight=int,
-        tileindex=int,
-        attributes=int,
-        xflip=bint,
-        yflip=bint,
-        palette=uint8_t,
-        sprite_cache_no=int,
-        dy=int,
-        dx=int,
-        yy=int,
-        xx=int,
-        color_code=uint8_t,
-        pixel=uint32_t,
-    )
-    cdef void fast_scanline_sprites(self, int) noexcept nogil
 
     cdef void clear_cache(self) noexcept nogil
     cdef inline void _clear_cache(self, uint8_t[:], int) noexcept nogil
@@ -796,6 +838,7 @@ cdef class FastRenderer(Renderer):
         y=int,
         wx=int,
         window_line=int,
+        background_enabled=bint,
     )
     cdef void render_frame(self) noexcept nogil
 

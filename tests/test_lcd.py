@@ -37,6 +37,22 @@ def test_fast_mode_selects_matching_lcd_renderer(default_rom):
         pyboy.stop(save=False)
 
 
+def test_fast_mode_render_after_skipped_frames(default_rom):
+    rendered_pyboy = PyBoy(default_rom, window="null", fast_mode=True)
+    skipped_pyboy = PyBoy(default_rom, window="null", fast_mode=True)
+    try:
+        for _ in range(31):
+            rendered_pyboy.tick(1, True, False)
+
+        skipped_pyboy.tick(30, False, False)
+        skipped_pyboy.tick(1, True, False)
+
+        np.testing.assert_array_equal(skipped_pyboy.screen.ndarray, rendered_pyboy.screen.ndarray)
+    finally:
+        rendered_pyboy.stop(save=False)
+        skipped_pyboy.stop(save=False)
+
+
 @pytest.mark.skipif(cython_compiled, reason="This test requires access to internal registers not available in Cython")
 def test_cycles_when_enabling_lcd(default_rom):
     pyboy = PyBoy(default_rom, window="null")

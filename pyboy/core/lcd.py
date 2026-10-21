@@ -1190,6 +1190,10 @@ class PaletteRegister:
         return True
 
     def set_palette_colors(self, palette):
+        source_colors = []
+        for index in range(4):
+            source_colors.append(palette[index] & 0xFFFFFF)
+        self.palette_source_rgb = tuple(source_colors)
         self.palette_mem_rgb = [(rgb_to_bgr(c)) for c in palette]
         self._update_lookup()
 
@@ -1357,6 +1361,249 @@ class Renderer:
         self._sync_minus = 0
         self.stop_vram_blocked = False
         self.reset_dot_pipeline()
+
+    def fast_scanline(self, y, bx, by, wx, window_active, window_line):
+        if self.lcd.disable_renderer:
+            return
+
+        if self.lcd._LCDC.window_enable and window_active and wx < COLS:
+            x = max(wx, 0)
+            if x:
+                self.scanline_background(y, 0, bx, by, x, self.lcd)
+            self.scanline_window(y, x, wx, 0, COLS - x, self.lcd, window_line)
+        elif self.lcd._LCDC.background_enable:
+            self.scanline_background(y, 0, bx, by, COLS, self.lcd)
+        else:
+            self.scanline_blank(y, 0, COLS, self.lcd)
+
+    def sort_sprites(self, sprite_count):
+        # Use insertion sort, as it has O(n) on already sorted arrays. This
+        # functions is likely called multiple times with unchanged data.
+        # Sort descending because of the sprite priority.
+
+        for i in range(1, sprite_count):
+            key = self.sprites_to_render[i]  # The current element to be inserted into the sorted portion
+            j = i - 1  # Index of the last element in the sorted portion of the array
+
+            # Move elements of the sorted portion greater than the key to the right
+            while j >= 0 and key > self.sprites_to_render[j]:
+                self.sprites_to_render[j + 1] = self.sprites_to_render[j]
+                j -= 1
+
+            # Insert the key into its correct position in the sorted portion
+            self.sprites_to_render[j + 1] = key
+
+    def fast_scanline_sprites(self, ly):
+        sprite_enabled = self.lcd._LCDC.sprite_enable
+        cgb_master_priority = self.lcd._LCDC.cgb_master_priority
+        if not sprite_enabled or self.lcd.disable_renderer:
+            return
+
+        spriteheight = 16 if self.lcd._LCDC.sprite_height else 8
+        for n in range(OBJECT_ATTRIBUTE_MEMORY - 4, -1, -4):
+            y = self.lcd.OAM[n] - 16
+            if y <= ly < y + spriteheight:
+                x = self.lcd.OAM[n + 1] - 8
+                tileindex = self.lcd.OAM[n + 2]
+                if spriteheight == 16:
+                    tileindex &= 0b11111110
+                attributes = self.lcd.OAM[n + 3]
+                xflip = attributes & 0b00100000
+                yflip = attributes & 0b01000000
+                sprite_cache_no = 0
+                if self.cgb:
+                    palette = attributes & 0b111
+                    if attributes & 0b1000:
+                        sprite_cache_no = 1
+                else:
+                    palette = 0
+                    if attributes & 0b10000:
+                        sprite_cache_no = 1
+
+                self.update_spritecache(sprite_cache_no, self.lcd, tileindex, sprite_cache_no if self.cgb else 0)
+                if spriteheight == 16:
+                    self.update_spritecache(
+                        sprite_cache_no, self.lcd, tileindex + 1, sprite_cache_no if self.cgb else 0
+                    )
+
+                dy = ly - y
+                yy = spriteheight - dy - 1 if yflip else dy
+                if not cython.compiled:
+                    for dx in range(8):
+                        xx = 7 - dx if xflip else dx
+                        color_code = self._spritecache[sprite_cache_no, 8 * tileindex + yy, xx]
+                        if 0 <= x + dx < COLS and color_code:
+                            bg_attributes = self._screenbuffer_attributes[ly, x + dx]
+                            if self.cgb:
+                                sprite_visible = not cgb_master_priority
+                                if cgb_master_priority:
+                                    if bg_attributes & BG_PRIORITY_FLAG:
+                                        sprite_visible = bool(bg_attributes & COL0_FLAG)
+                                    else:
+                                        sprite_visible = not attributes & 0x80 or bool(bg_attributes & COL0_FLAG)
+                            else:
+                                sprite_visible = not attributes & 0x80 or bool(bg_attributes & COL0_FLAG)
+                            if sprite_visible:
+                                if self.cgb:
+                                    pixel = self.lcd.ocpd.getcolor(palette, color_code)
+                                elif sprite_cache_no:
+                                    pixel = self.lcd.OBP1.getcolor(color_code)
+                                else:
+                                    pixel = self.lcd.OBP0.getcolor(color_code)
+                                self._screenbuffer[ly, x + dx] = pixel
+                    continue
+
+                sprite_row = self._spritecache_64[sprite_cache_no, 8 * tileindex + yy]
+                opaque_mask = _sprite_row_opaque_mask(sprite_row)
+                if _sprite_row_is_fully_opaque(opaque_mask):
+                    for dx in range(8):
+                        xx = 7 - dx if xflip else dx
+                        color_code = _sprite_row_color_code(sprite_row, xx)
+                        if 0 <= x + dx < COLS:
+                            bg_attributes = self._screenbuffer_attributes[ly, x + dx]
+                            if self.cgb:
+                                sprite_visible = not cgb_master_priority
+                                if cgb_master_priority:
+                                    if bg_attributes & BG_PRIORITY_FLAG:
+                                        sprite_visible = bool(bg_attributes & COL0_FLAG)
+                                    else:
+                                        sprite_visible = not attributes & 0x80 or bool(bg_attributes & COL0_FLAG)
+                            else:
+                                sprite_visible = not attributes & 0x80 or bool(bg_attributes & COL0_FLAG)
+                            if sprite_visible:
+                                if self.cgb:
+                                    pixel = self.lcd.ocpd.getcolor(palette, color_code)
+                                elif sprite_cache_no:
+                                    pixel = self.lcd.OBP1.getcolor(color_code)
+                                else:
+                                    pixel = self.lcd.OBP0.getcolor(color_code)
+                                self._screenbuffer[ly, x + dx] = pixel
+                else:
+                    while opaque_mask:
+                        xx = pyboy_sprite_pixel_index(opaque_mask)
+                        opaque_mask &= opaque_mask - 1
+                        dx = 7 - xx if xflip else xx
+                        if 0 <= x + dx < COLS:
+                            color_code = _sprite_row_color_code(sprite_row, xx)
+                            bg_attributes = self._screenbuffer_attributes[ly, x + dx]
+                            if self.cgb:
+                                sprite_visible = not cgb_master_priority
+                                if cgb_master_priority:
+                                    if bg_attributes & BG_PRIORITY_FLAG:
+                                        sprite_visible = bool(bg_attributes & COL0_FLAG)
+                                    else:
+                                        sprite_visible = not attributes & 0x80 or bool(bg_attributes & COL0_FLAG)
+                            else:
+                                sprite_visible = not attributes & 0x80 or bool(bg_attributes & COL0_FLAG)
+                            if sprite_visible:
+                                if self.cgb:
+                                    pixel = self.lcd.ocpd.getcolor(palette, color_code)
+                                elif sprite_cache_no:
+                                    pixel = self.lcd.OBP1.getcolor(color_code)
+                                else:
+                                    pixel = self.lcd.OBP0.getcolor(color_code)
+                                self._screenbuffer[ly, x + dx] = pixel
+
+    def scanline_sprites(self, ly, buffer, buffer_attributes, ignore_priority):
+        if not self.lcd._LCDC.sprite_enable or self.lcd.disable_renderer:
+            return
+
+        # Find the first 10 sprites in OAM that appears on this scanline.
+        # The lowest X-coordinate has priority, when overlapping
+        spriteheight = 16 if self.lcd._LCDC.sprite_height else 8
+        sprite_count = 0
+        for n in range(0x00, OBJECT_ATTRIBUTE_MEMORY, 4):
+            y = self.lcd.OAM[n] - 16  # Documentation states the y coordinate needs to be subtracted by 16
+            x = self.lcd.OAM[n + 1] - 8  # Documentation states the x coordinate needs to be subtracted by 8
+
+            if y <= ly < y + spriteheight:
+                # x is used for sorting for priority
+                if self.cgb:
+                    self.sprites_to_render[sprite_count] = n
+                else:
+                    self.sprites_to_render[sprite_count] = x << 16 | n
+                sprite_count += 1
+
+            if sprite_count == 10:
+                break
+
+        # Pan docs:
+        # When these 10 sprites overlap, the highest priority one will appear above all others, etc. (Thus, no
+        # Z-fighting.) In CGB mode, the first sprite in OAM ($FE00-$FE03) has the highest priority, and so on. In
+        # Non-CGB mode, the smaller the X coordinate, the higher the priority. The tie breaker (same X coordinates) is
+        # the same priority as in CGB mode.
+        self.sort_sprites(sprite_count)
+
+        for _n in self.sprites_to_render[:sprite_count]:
+            if self.cgb:
+                n = _n
+            else:
+                n = _n & 0xFF
+            # n = self.sprites_to_render_n[_n]
+            y = self.lcd.OAM[n] - 16  # Documentation states the y coordinate needs to be subtracted by 16
+            x = self.lcd.OAM[n + 1] - 8  # Documentation states the x coordinate needs to be subtracted by 8
+            tileindex = self.lcd.OAM[n + 2]
+            if spriteheight == 16:
+                tileindex &= 0b11111110
+            attributes = self.lcd.OAM[n + 3]
+            xflip = attributes & 0b00100000
+            yflip = attributes & 0b01000000
+            spritepriority = (attributes & 0b10000000) and not ignore_priority
+            sprite_cache_no = 0
+            if self.cgb:
+                palette = attributes & 0b111
+                if attributes & 0b1000:
+                    sprite_cache_no = 1
+            else:
+                # Fake palette index
+                palette = 0
+                if attributes & 0b10000:
+                    sprite_cache_no = 1
+
+            self.update_spritecache(sprite_cache_no, self.lcd, tileindex, sprite_cache_no if self.cgb else 0)
+            if self.lcd._LCDC.sprite_height:
+                self.update_spritecache(sprite_cache_no, self.lcd, tileindex + 1, sprite_cache_no if self.cgb else 0)
+
+            dy = ly - y
+            yy = spriteheight - dy - 1 if yflip else dy
+
+            for dx in range(8):
+                xx = 7 - dx if xflip else dx
+                color_code = self._spritecache[sprite_cache_no, 8 * tileindex + yy, xx]
+                if 0 <= x < COLS and not color_code == 0:  # If pixel is not transparent
+                    if self.cgb:
+                        pixel = self.lcd.ocpd.getcolor(palette, color_code)
+                        bgmappriority = buffer_attributes[ly, x] & BG_PRIORITY_FLAG
+
+                        if (
+                            self.lcd._LCDC.cgb_master_priority
+                        ):  # If 0, sprites are always on top, if 1 follow priorities
+                            if bgmappriority:  # If 0, use spritepriority, if 1 take priority
+                                if buffer_attributes[ly, x] & COL0_FLAG:
+                                    buffer[ly, x] = pixel
+                            elif (
+                                spritepriority
+                            ):  # If 1, sprite is behind bg/window. Color 0 of window/bg is transparent
+                                if buffer_attributes[ly, x] & COL0_FLAG:
+                                    buffer[ly, x] = pixel
+                            else:
+                                buffer[ly, x] = pixel
+                        else:
+                            buffer[ly, x] = pixel
+                    else:
+                        # TODO: Unify with CGB
+                        if attributes & 0b10000:
+                            pixel = self.lcd.OBP1.getcolor(color_code)
+                        else:
+                            pixel = self.lcd.OBP0.getcolor(color_code)
+
+                        if spritepriority:  # If 1, sprite is behind bg/window. Color 0 of window/bg is transparent
+                            if buffer_attributes[ly, x] & COL0_FLAG:  # if BG pixel is transparent
+                                buffer[ly, x] = pixel
+                        else:
+                            buffer[ly, x] = pixel
+                x += 1
+            x -= 8
 
     def clear_cache(self):
         self._background_view_dirty = True
@@ -2934,148 +3181,6 @@ class Renderer:
         if y == 143:
             self.ly_window = -1
 
-    def fast_scanline_sprites(self, ly):
-        if not self.lcd._LCDC.sprite_enable or self.lcd.disable_renderer:
-            return
-
-        spriteheight = 16 if self.lcd._LCDC.sprite_height else 8
-        for n in range(OBJECT_ATTRIBUTE_MEMORY - 4, -1, -4):
-            y = self.lcd.OAM[n] - 16
-            if y <= ly < y + spriteheight:
-                x = self.lcd.OAM[n + 1] - 8
-                tileindex = self.lcd.OAM[n + 2]
-                if spriteheight == 16:
-                    tileindex &= 0b11111110
-                attributes = self.lcd.OAM[n + 3]
-                xflip = attributes & 0b00100000
-                yflip = attributes & 0b01000000
-                sprite_cache_no = 0
-                if self.cgb:
-                    palette = attributes & 0b111
-                    if attributes & 0b1000:
-                        sprite_cache_no = 1
-                else:
-                    palette = 0
-                    if attributes & 0b10000:
-                        sprite_cache_no = 1
-
-                self.update_spritecache(sprite_cache_no, self.lcd, tileindex, sprite_cache_no if self.cgb else 0)
-                if spriteheight == 16:
-                    self.update_spritecache(
-                        sprite_cache_no, self.lcd, tileindex + 1, sprite_cache_no if self.cgb else 0
-                    )
-
-                dy = ly - y
-                yy = spriteheight - dy - 1 if yflip else dy
-                for dx in range(8):
-                    xx = 7 - dx if xflip else dx
-                    color_code = self._spritecache[sprite_cache_no, 8 * tileindex + yy, xx]
-                    if 0 <= x + dx < COLS and color_code:
-                        if self.cgb:
-                            pixel = self.lcd.ocpd.getcolor(palette, color_code)
-                        elif sprite_cache_no:
-                            pixel = self.lcd.OBP1.getcolor(color_code)
-                        else:
-                            pixel = self.lcd.OBP0.getcolor(color_code)
-                        self._screenbuffer[ly, x + dx] = pixel
-
-    def sort_sprites(self, sprite_count):
-        for i in range(1, sprite_count):
-            key = self.sprites_to_render[i]
-            j = i - 1
-            while j >= 0 and key > self.sprites_to_render[j]:
-                self.sprites_to_render[j + 1] = self.sprites_to_render[j]
-                j -= 1
-            self.sprites_to_render[j + 1] = key
-
-    def scanline_sprites(self, ly, buffer, buffer_attributes, ignore_priority):
-        if not self.lcd._LCDC.sprite_enable or self.lcd.disable_renderer:
-            return
-
-        spriteheight = 16 if self.lcd._LCDC.sprite_height else 8
-        sprite_count = 0
-        for n in range(0x00, OBJECT_ATTRIBUTE_MEMORY, 4):
-            y = self.lcd.OAM[n] - 16
-            x = self.lcd.OAM[n + 1] - 8
-
-            if y <= ly < y + spriteheight:
-                if self.cgb:
-                    self.sprites_to_render[sprite_count] = n
-                else:
-                    self.sprites_to_render[sprite_count] = x << 16 | n
-                sprite_count += 1
-
-            if sprite_count == 10:
-                break
-
-        self.sort_sprites(sprite_count)
-
-        for _n in self.sprites_to_render[:sprite_count]:
-            if self.cgb:
-                n = _n
-            else:
-                n = _n & 0xFF
-            y = self.lcd.OAM[n] - 16
-            x = self.lcd.OAM[n + 1] - 8
-            tileindex = self.lcd.OAM[n + 2]
-            if spriteheight == 16:
-                tileindex &= 0b11111110
-            attributes = self.lcd.OAM[n + 3]
-            xflip = attributes & 0b00100000
-            yflip = attributes & 0b01000000
-            spritepriority = (attributes & 0b10000000) and not ignore_priority
-            sprite_cache_no = 0
-            if self.cgb:
-                palette = attributes & 0b111
-                if attributes & 0b1000:
-                    sprite_cache_no = 1
-            else:
-                palette = 0
-                if attributes & 0b10000:
-                    sprite_cache_no = 1
-
-            self.update_spritecache(sprite_cache_no, self.lcd, tileindex, sprite_cache_no if self.cgb else 0)
-            if self.lcd._LCDC.sprite_height:
-                self.update_spritecache(
-                    sprite_cache_no, self.lcd, tileindex + 1, sprite_cache_no if self.cgb else 0
-                )
-
-            dy = ly - y
-            yy = spriteheight - dy - 1 if yflip else dy
-
-            for dx in range(8):
-                xx = 7 - dx if xflip else dx
-                color_code = self._spritecache[sprite_cache_no, 8 * tileindex + yy, xx]
-                if 0 <= x < COLS and color_code != 0:
-                    if self.cgb:
-                        pixel = self.lcd.ocpd.getcolor(palette, color_code)
-                        bgmappriority = buffer_attributes[ly, x] & BG_PRIORITY_FLAG
-
-                        if self.lcd._LCDC.cgb_master_priority:
-                            if bgmappriority:
-                                if buffer_attributes[ly, x] & COL0_FLAG:
-                                    buffer[ly, x] = pixel
-                            elif spritepriority:
-                                if buffer_attributes[ly, x] & COL0_FLAG:
-                                    buffer[ly, x] = pixel
-                            else:
-                                buffer[ly, x] = pixel
-                        else:
-                            buffer[ly, x] = pixel
-                    else:
-                        if attributes & 0b10000:
-                            pixel = self.lcd.OBP1.getcolor(color_code)
-                        else:
-                            pixel = self.lcd.OBP0.getcolor(color_code)
-
-                        if spritepriority:
-                            if buffer_attributes[ly, x] & COL0_FLAG:
-                                buffer[ly, x] = pixel
-                        else:
-                            buffer[ly, x] = pixel
-                x += 1
-            x -= 8
-
     def render_frame(self):
         pass
 
@@ -3311,15 +3416,24 @@ class FastRenderer(Renderer):
         if self.lcd.disable_renderer:
             return
 
-        self.update_background_view()
+        if not self.lcd._LCDC.lcd_enable:
+            self.blank_screen()
+            return
+
+        background_enabled = self.cgb or self.lcd._LCDC.background_enable
+        if background_enabled or self.lcd._LCDC.window_enable:
+            self.update_background_view()
+
         window_line = -1
         for y in range(ROWS):
             wx = self.lcd._scanlineparameters[y][2] - 7
-            if self.lcd._LCDC.window_enable and self.lcd._scanlineparameters[y][4] and wx < COLS:
+            window_active = self.lcd._scanlineparameters[y][4]
+            if self.lcd._LCDC.window_enable and window_active and wx < COLS:
                 window_line += 1
             self.render_scanline(y, window_line)
 
         self.ly_window = -1
+
 
 class VBKregister:
     def __init__(self, value=0):

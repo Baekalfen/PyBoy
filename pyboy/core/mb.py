@@ -807,12 +807,14 @@ class Motherboard:
                 if self.lcd._LCDC.lcd_enable and self.lcd._STAT._mode == 3:
                     return
             if not self.cgb or self.lcd.vbk.active_bank == 0:
-                self.lcd.VRAM0[i - 0x8000] = value
+                index = i - 0x8000
+                self.lcd.VRAM0[index] = value
                 if i < 0x9800:  # Is within tile data -- not tile maps
                     # Mask out the byte of the tile
                     self.lcd.renderer.invalidate_tile(((i & 0xFFF0) - 0x8000) // 16, 0)
             else:
-                self.lcd.VRAM1[i - 0x8000] = value
+                index = i - 0x8000
+                self.lcd.VRAM1[index] = value
                 if i < 0x9800:  # Is within tile data -- not tile maps
                     # Mask out the byte of the tile
                     self.lcd.renderer.invalidate_tile(((i & 0xFFF0) - 0x8000) // 16, 1)
@@ -851,7 +853,8 @@ class Motherboard:
             if self.oam_dma_active and not self.oam_dma_reading:
                 self.sync_oam_dma(self.cpu.memory_access_offset)
             if not self.oam_dma_active:
-                self.lcd.OAM[i - 0xFE00] = value
+                index = i - 0xFE00
+                self.lcd.OAM[index] = value
         elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
             if not self.cgb:
                 self.ram.non_io_internal_ram0[i - 0xFEA0] = value
@@ -1116,6 +1119,48 @@ class Motherboard:
             self.cpu.interrupts_enabled_register = value
             self.cpu.bail = True
 
+    def copy_hdma_rom_block(self, src, dst):
+        if not self.fast_mode or dst < 0x8000 or dst > 0x9FF0:
+            return False
+
+        if src <= 0x3FF0:
+            if self.bootrom_enabled and src < 0x1000:
+                return False
+            rom_bank = self.cartridge.rombank_selected_low
+            source_offset = src
+        elif 0x4000 <= src <= 0x7FF0:
+            rom_bank = self.cartridge.rombank_selected
+            source_offset = src - 0x4000
+        else:
+            return False
+
+        if not self.cgb or self.lcd.vbk.active_bank == 0:
+            if cython.compiled:
+                _copy_memory(
+                    cython.address(self.lcd.VRAM0[dst - 0x8000]),
+                    cython.address(self.cartridge.rombanks[rom_bank, source_offset]),
+                    0x10,
+                )
+            else:
+                for i in range(0x10):
+                    self.lcd.VRAM0[dst - 0x8000 + i] = self.cartridge.rombanks[rom_bank, source_offset + i]
+            vram_bank = 0
+        else:
+            if cython.compiled:
+                _copy_memory(
+                    cython.address(self.lcd.VRAM1[dst - 0x8000]),
+                    cython.address(self.cartridge.rombanks[rom_bank, source_offset]),
+                    0x10,
+                )
+            else:
+                for i in range(0x10):
+                    self.lcd.VRAM1[dst - 0x8000 + i] = self.cartridge.rombanks[rom_bank, source_offset + i]
+            vram_bank = 1
+
+        if dst < 0x9800:
+            self.lcd.renderer.invalidate_tile((dst - 0x8000) // 16, vram_bank)
+        return True
+
     def transfer_DMA(self, src):
         # The OAM DMA is started by a write to FF46. The transfer begins
         # two M-cycles after the write is observed on the bus. Restarting
@@ -1133,6 +1178,45 @@ class Motherboard:
         # Re-evaluate the CPU window so the fetch loop picks up the bus
         # conflict path while the transfer is active
         self.cpu.bail = True
+        if self.fast_mode:
+            source = src
+            if not self.cgb and source >= 0xFE:
+                source -= 0x20
+            offset = source << 8
+
+            copied = False
+            if not self.bootrom_enabled and offset < 0x4000 and offset + 0xA0 <= 0x4000:
+                if cython.compiled:
+                    _copy_memory(
+                        cython.address(self.lcd.OAM[0]),
+                        cython.address(self.cartridge.rombanks[self.cartridge.rombank_selected_low, offset]),
+                        0xA0,
+                    )
+                else:
+                    for n in range(0xA0):
+                        self.lcd.OAM[n] = self.cartridge.rombanks[self.cartridge.rombank_selected_low, offset + n]
+                copied = True
+            elif not self.bootrom_enabled and 0x4000 <= offset and offset + 0xA0 <= 0x8000:
+                if cython.compiled:
+                    _copy_memory(
+                        cython.address(self.lcd.OAM[0]),
+                        cython.address(self.cartridge.rombanks[self.cartridge.rombank_selected, offset - 0x4000]),
+                        0xA0,
+                    )
+                else:
+                    for n in range(0xA0):
+                        self.lcd.OAM[n] = self.cartridge.rombanks[self.cartridge.rombank_selected, offset - 0x4000 + n]
+                copied = True
+
+            if not copied:
+                self.oam_dma_reading = True
+                for n in range(0xA0):
+                    value = self.getitem(offset + n)
+                    self.lcd.OAM[n] = value
+                self.oam_dma_reading = False
+
+            self.oam_dma_active = False
+            self.oam_dma_index = 0xA0
 
 
 class HDMA:
@@ -1194,8 +1278,20 @@ class HDMA:
                 # General purpose DMA transfer
                 src = self.curr_src
                 dst = self.curr_dst
-                for i in range(bytes_to_transfer):
-                    mb.setitem((dst + i) & 0xFFFF, mb.getitem((src + i) & 0xFFFF))
+                if mb.fast_mode:
+                    for block in range(bytes_to_transfer // 0x10):
+                        block_src = (src + block * 0x10) & 0xFFFF
+                        block_dst = (dst + block * 0x10) & 0xFFFF
+                        if mb.copy_hdma_rom_block(block_src, block_dst):
+                            continue
+                        for i in range(0x10):
+                            mb.setitem(
+                                (block_dst + i) & 0xFFFF,
+                                mb.getitem((block_src + i) & 0xFFFF),
+                            )
+                else:
+                    for i in range(bytes_to_transfer):
+                        mb.setitem((dst + i) & 0xFFFF, mb.getitem((src + i) & 0xFFFF))
 
                 self.curr_src = (src + bytes_to_transfer) & 0xFFFF
                 self.curr_dst = (dst + bytes_to_transfer) & 0xFFFF
@@ -1211,7 +1307,10 @@ class HDMA:
                 # set 7th bit to 0
                 self.hdma5 = self.hdma5 & 0x7F
                 self.transfer_active = True
-                if not mb.lcd._LCDC.lcd_enable:
+                if mb.fast_mode:
+                    while self.transfer_active:
+                        self.tick(mb)
+                elif not mb.lcd._LCDC.lcd_enable:
                     self.tick(mb)
 
     def tick(self, mb):
@@ -1219,8 +1318,9 @@ class HDMA:
         src = self.curr_src & 0xFFF0
         dst = (self.curr_dst & 0x1FF0) | 0x8000
 
-        for i in range(0x10):
-            mb.setitem(dst + i, mb.getitem(src + i))
+        if not mb.fast_mode or not mb.copy_hdma_rom_block(src, dst):
+            for i in range(0x10):
+                mb.setitem(dst + i, mb.getitem(src + i))
 
         self.curr_dst += 0x10
         self.curr_src += 0x10
