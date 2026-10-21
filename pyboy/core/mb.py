@@ -459,7 +459,7 @@ class Motherboard:
                 cycles_target = max(
                     4,
                     min(
-                        self.timer._cycles_to_interrupt,
+                        self.timer._cycles_to_irq,
                         # https://gbdev.io/pandocs/STAT.html
                         # STAT (_cycles_to_interrupt) vs. VBLANK interrupt (_cycles_to_interrupt) vs. end frame (_cycles_to_frame)
                         self.lcd._cycles_to_interrupt,  # TODO: Be more agreesive. Only if actual interrupt enabled.
@@ -658,6 +658,7 @@ class Motherboard:
             elif 0xFF04 <= i <= 0xFF07:
                 if self.timer.tick(self.cpu.cycles):
                     self.cpu.set_interruptflag(INTR_TIMER)
+                    self.cpu.bail = True
 
                 if i == 0xFF04:
                     return self.timer.DIV
@@ -916,6 +917,7 @@ class Motherboard:
                     self.timer.write_tma(value)
                 elif i == 0xFF07:
                     self.timer.write_tac(value)
+                self.cpu.bail = True
             elif i == 0xFF0F:
                 # Sync the interrupt sources to the access cycle before the
                 # write replaces the flags, so events raised before the write
