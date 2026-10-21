@@ -3,7 +3,7 @@
 
 all: build
 
-ROOT_DIR := $(shell git rev-parse --show-toplevel)
+ROOT_DIR ?= $(shell git rev-parse --show-toplevel)
 
 build:
 	rgbasm -o default_rom.obj default_rom.asm
