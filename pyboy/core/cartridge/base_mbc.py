@@ -40,6 +40,8 @@ class BaseMBC:
         self.rambank_selected = 0
         self.rombank_selected = 1
         self.rombank_selected_low = 0
+        self.ram_address_mask = 0x1FFF
+        self.ram_value_mask = 0
 
         # Rumble pack support (initialized to False for non-MBC5 cartridges)
         self.rumble_supported = False

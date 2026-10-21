@@ -11,6 +11,11 @@ logger = pyboy.logging.get_logger(__name__)
 
 
 class MBC2(BaseMBC):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.ram_address_mask = 0x1FF
+        self.ram_value_mask = 0b1111_0000
+
     def setitem(self, address, value):
         if 0x0000 <= address < 0x4000:
             value &= 0b00001111
@@ -23,7 +28,7 @@ class MBC2(BaseMBC):
         elif 0xA000 <= address < 0xC000:
             if self.rambank_enabled:
                 # MBC2 includes built-in RAM of 512 x 4 bits (Only the 4 LSBs are used)
-                self.rambanks[0, address % 512] = value | 0b11110000
+                self.rambanks[0, (address - 0xA000) & self.ram_address_mask] = value | self.ram_value_mask
         # else:
         #     logger.debug("Unexpected write to 0x%0.4x, value: 0x%0.2x", address, value)
 

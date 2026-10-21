@@ -28,6 +28,8 @@ cdef class BaseMBC:
     cdef uint16_t rambank_selected
     cdef uint16_t rombank_selected
     cdef uint16_t rombank_selected_low
+    cdef uint16_t ram_address_mask
+    cdef uint8_t ram_value_mask
     cdef bint cgb
     cdef public bint rumble_supported
     cdef public bint rumble_enabled
