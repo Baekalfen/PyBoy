@@ -184,6 +184,8 @@ class Motherboard:
             else:
                 opcode = self.lcd.VRAM1[addr - 0x8000]
                 self.lcd.VRAM1[addr - 0x8000] = OPCODE_BRK
+            if self.fast_mode and addr < 0x9800:
+                self.lcd.renderer.invalidate_tile((addr - 0x8000) // 16, bank)
         elif 0xA000 <= addr < 0xC000:
             if self.cartridge.external_ram_count < bank:
                 raise PyBoyOutOfBoundsException(
@@ -225,6 +227,8 @@ class Motherboard:
                     self.lcd.VRAM0[addr - 0x8000] = opcode
                 else:
                     self.lcd.VRAM1[addr - 0x8000] = opcode
+                if self.fast_mode and addr < 0x9800:
+                    self.lcd.renderer.invalidate_tile((addr - 0x8000) // 16, bank)
             elif 0xA000 <= addr < 0xC000:
                 self.cartridge.rambanks[bank, addr - 0xA000] = opcode
             elif 0xC000 <= addr <= 0xE000:

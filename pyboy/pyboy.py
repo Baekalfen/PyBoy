@@ -2173,11 +2173,17 @@ class PyBoyMemoryView:
                             _v = iter(v)
                             for x in range(start, stop, step):
                                 self.mb.lcd.VRAM0[x] = next(_v)
+                                if self.mb.fast_mode and x < 0x1800:
+                                    self.mb.lcd.renderer.invalidate_tile(x // 16, 0)
                         else:
                             for x in range(start, stop, step):
                                 self.mb.lcd.VRAM0[x] = v
+                                if self.mb.fast_mode and x < 0x1800:
+                                    self.mb.lcd.renderer.invalidate_tile(x // 16, 0)
                     else:
                         self.mb.lcd.VRAM0[start] = v
+                        if self.mb.fast_mode and start < 0x1800:
+                            self.mb.lcd.renderer.invalidate_tile(start // 16, 0)
                 else:
                     if not is_single:
                         # Writing slice of memory space
@@ -2187,11 +2193,17 @@ class PyBoyMemoryView:
                             _v = iter(v)
                             for x in range(start, stop, step):
                                 self.mb.lcd.VRAM1[x] = next(_v)
+                                if self.mb.fast_mode and x < 0x1800:
+                                    self.mb.lcd.renderer.invalidate_tile(x // 16, 1)
                         else:
                             for x in range(start, stop, step):
                                 self.mb.lcd.VRAM1[x] = v
+                                if self.mb.fast_mode and x < 0x1800:
+                                    self.mb.lcd.renderer.invalidate_tile(x // 16, 1)
                     else:
                         self.mb.lcd.VRAM1[start] = v
+                        if self.mb.fast_mode and start < 0x1800:
+                            self.mb.lcd.renderer.invalidate_tile(start // 16, 1)
             elif start < 0xC000:
                 start -= 0xA000
                 stop -= 0xA000

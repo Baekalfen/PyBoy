@@ -62,6 +62,59 @@ def test_fast_mode_is_opt_in(default_rom):
         pyboy.stop(save=False)
 
 
+@pytest.mark.parametrize(
+    ("rom_fixture", "cgb"),
+    (("default_rom", False), ("default_rom_cgb", True)),
+)
+def test_fast_mode_window_uses_its_tilemap(request, rom_fixture, cgb, tmp_path):
+    with open(request.getfixturevalue(rom_fixture), "rb") as rom_file:
+        rom = bytearray(rom_file.read())
+    rom[0x100:0x102] = b"\x18\xfe"
+    rom_path = tmp_path / ("window_tilemap_test.gbc" if cgb else "window_tilemap_test.gb")
+    rom_path.write_bytes(rom)
+
+    pyboy = PyBoy(str(rom_path), window="null", fast_mode=True)
+    try:
+        pyboy.set_emulation_speed(0)
+        pyboy.tick(5, False, False)
+        pyboy.memory[0xFF40] = 0
+        pyboy.memory[0xFF4A] = 0
+        pyboy.memory[0xFF4B] = 87
+
+        if cgb:
+            pyboy.memory[0xFF68] = 0x80
+            for value in (0x1F, 0x00, 0xE0, 0x03):
+                pyboy.memory[0xFF69] = value
+        else:
+            pyboy.memory[0xFF47] = 0xE4
+
+        for map_index in range(32 * 32):
+            pyboy.memory[0, 0x9800 + map_index] = 0
+            pyboy.memory[0, 0x9C00 + map_index] = 1
+            if cgb:
+                pyboy.memory[1, 0x9800 + map_index] = 0
+                pyboy.memory[1, 0x9C00 + map_index] = 0
+
+        for row in range(8):
+            pyboy.memory[0, 0x8010 + row * 2] = 0xFF
+            pyboy.memory[0, 0x8011 + row * 2] = 0
+
+        pyboy.memory[0xFF40] = 0xF1
+        pyboy.tick(3, True, False)
+        frame = pyboy.screen.ndarray.copy()
+
+        assert tuple(frame[0, 79, :3]) != tuple(frame[0, 80, :3])
+
+        for row in range(8):
+            pyboy.memory[0, 0x8010 + row * 2] = 0
+        pyboy.tick(3, True, False)
+        updated_frame = pyboy.screen.ndarray
+
+        assert tuple(updated_frame[0, 79, :3]) == tuple(updated_frame[0, 80, :3])
+    finally:
+        pyboy.stop(save=False)
+
+
 def test_fast_mode_rejects_serial_shared_memory(default_rom):
     with pytest.raises(PyBoyInvalidOperationException, match="Serial shared memory"):
         PyBoy(default_rom, window="null", fast_mode=True, serial_shared_memory=object())
