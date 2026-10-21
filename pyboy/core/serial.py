@@ -9,28 +9,9 @@ from multiprocessing import shared_memory
 import pyboy
 from pyboy.utils import MAX_CYCLES, PyBoyInvalidOperationException
 
+import cython
+
 logger = pyboy.logging.get_logger(__name__)
-
-try:
-    import cython
-except ImportError:
-
-    class _mock:
-        def __enter__(self):
-            pass
-
-        def __exit__(self, *args):
-            pass
-
-    exec(
-        """
-class cython:
-    gil = _mock()
-    nogil = _mock()
-""",
-        globals(),
-        locals(),
-    )
 
 
 CYCLES_8192HZ = 128
