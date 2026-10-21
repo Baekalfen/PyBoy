@@ -101,6 +101,7 @@ class PyBoy:
         sound_volume=100,
         sound_emulated=True,
         sound_sample_rate=None,
+        fast_mode=False,
         cgb=None,
         gameshark=None,
         no_input=False,
@@ -152,6 +153,8 @@ class PyBoy:
             sound_volume (int): Sound volume from 0 to 100. Defaults to 100.
             sound_emulated (bool): Whether to emulate sound. Disabling it also disables sound sampling.
             sound_sample_rate (int or None): Positive sound sample rate in Hz. Defaults to 48,000 Hz.
+            fast_mode (bool): Use faster, less accurate emulation without sound or serial, with simplified LCD timing
+                and frame-end rendering.
             cgb (bool or None): Force Game Boy Color mode (`True`) or original Game Boy mode (`False`); `None`
                 auto-detects the mode from the ROM and boot ROM.
             gameshark (str or None): Comma-separated GameShark codes to apply at startup.
@@ -179,6 +182,7 @@ class PyBoy:
 
         self.initialized = False
         self.no_input = no_input
+        self.fast_mode = fast_mode
 
         _log_level(log_level)
 
@@ -210,6 +214,9 @@ class PyBoy:
 
         if gamerom is None:
             raise FileNotFoundError("No game ROM provided!")
+
+        if fast_mode and serial_shared_memory is not None:
+            raise PyBoyInvalidOperationException("Serial shared memory is not available in fast mode.")
 
         gamerom_file = None
         self.gamerom = None
@@ -279,6 +286,7 @@ class PyBoy:
                 randomize=randomize,
                 serial_shared_memory=serial_shared_memory,
                 serial_interrupt_based=serial_interrupt_based,
+                fast_mode=fast_mode,
             )
         finally:
             # Close the files we opened -- i.e. not passed from args

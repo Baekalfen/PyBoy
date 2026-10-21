@@ -47,6 +47,7 @@ cdef class Motherboard:
     cdef bint sgb_capable
     cdef bint sgb_active_transfer
     cdef bint sgb_multiplayer
+    cdef bint fast_mode
     cdef bint bootrom_enabled
     cdef char[1024] serialbuffer
     cdef uint16_t serialbuffer_count

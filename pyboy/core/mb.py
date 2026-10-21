@@ -39,6 +39,7 @@ class Motherboard:
         randomize=False,
         serial_shared_memory=None,
         serial_interrupt_based=False,
+        fast_mode=False,
     ):
         if bootrom_file is not None:
             logger.debug("Boot-ROM file provided")
@@ -73,6 +74,7 @@ class Motherboard:
         # game locked into compatibility mode cannot use the CGB serial
         # features even while booted by the CGB boot ROM
         serial_cgb_mode = self.cgb and self.cartridge.cgb
+        self.fast_mode = fast_mode
 
         self.timer = timer.Timer()
         self.interaction = interaction.Interaction()
@@ -81,7 +83,7 @@ class Motherboard:
         if serial_shared_memory is not None:
             self.serial = serial.SerialSharedMemory(serial_cgb_mode, serial_shared_memory, serial_interrupt_based)
         else:
-            self.serial = serial.Serial(serial_cgb_mode)
+            self.serial = serial.Serial(serial_cgb_mode, emulate=not fast_mode)
 
         # Initialize SGB support
         self.sgb = sgb.SGB(self)
@@ -112,9 +114,10 @@ class Motherboard:
             color_palette,
             cgb_color_palette,
             randomize=randomize,
+            fast_mode=fast_mode,
         )
 
-        self.sound = sound.Sound(sound_volume, sound_emulated, sound_sample_rate, self.cgb)
+        self.sound = sound.Sound(sound_volume, sound_emulated and not fast_mode, sound_sample_rate, self.cgb)
 
         self.key1 = 0
         self.key0 = 0
@@ -878,11 +881,12 @@ class Motherboard:
                 if self.serial.tick(self.cpu.cycles):
                     self.cpu.set_interruptflag(INTR_SERIAL)
                 if i == 0xFF01:
+                    # Keep debug and test-ROM output available without serial timing.
                     self.serialbuffer[self.serialbuffer_count] = value
                     self.serialbuffer_count += 1
                     self.serialbuffer_count &= 0x3FF
                     self.serial.set_SB(value)
-                elif i == 0xFF02:
+                else:
                     self.serial.set_SC(value)
             elif 0xFF04 <= i <= 0xFF07:
                 if self.timer.tick(self.cpu.cycles):
@@ -895,9 +899,10 @@ class Motherboard:
                     # clears DIV, and triggers the falling edge).
                     apu_div_edge = self.timer.DIV & (0b1_0000 << self.sound.speed_shift)
                     self.sound.tick(self.cpu.cycles)  # Process outstanding cycles
-                    if apu_div_edge:
-                        self.sound.apu_poweron_after_div_write = True
-                        self.sound.last_div_write_cycles = self.sound.cycles
+                    if self.sound.emulate:
+                        if apu_div_edge:
+                            self.sound.apu_poweron_after_div_write = True
+                            self.sound.last_div_write_cycles = self.sound.cycles
                     self.sound.reset_apu_div(apu_div_edge)
 
                     self.timer.reset()
@@ -920,31 +925,33 @@ class Motherboard:
                 self.cpu.interrupts_flag_register = value & 0b0001_1111
             elif 0xFF10 <= i < 0xFF40:
                 self.sound.tick(self.cpu.cycles)
-                if i == 0xFF26 and value & 0x80 and not self.sound.poweron:
-                    # Starting the APU while DIV's clock bit is high skips its next edge.
-                    if self.sound.cgb:
-                        self.sound.apu_poweron_after_div_write = (
-                            self.sound.cycles - self.sound.last_div_write_cycles < 8192
-                        )
-                    if (
-                        self.sound.cgb
-                        and self.sound.cycles - self.sound.last_power_off_cycles < 8192
-                        or self.sound.apu_poweron_after_div_write
-                    ) and self.timer.DIV & (0b1_0000 << self.sound.speed_shift):
-                        self.sound.div_apu_counter = 2
-                    else:
-                        self.sound.div_apu_counter = 0
+                if self.sound.emulate:
+                    if i == 0xFF26 and value & 0x80 and not self.sound.poweron:
+                        # Starting the APU while DIV's clock bit is high skips its next edge.
+                        if self.sound.cgb:
+                            self.sound.apu_poweron_after_div_write = (
+                                self.sound.cycles - self.sound.last_div_write_cycles < 8192
+                            )
+                        if (
+                            self.sound.cgb
+                            and self.sound.cycles - self.sound.last_power_off_cycles < 8192
+                            or self.sound.apu_poweron_after_div_write
+                        ) and self.timer.DIV & (0b1_0000 << self.sound.speed_shift):
+                            self.sound.div_apu_counter = 2
+                        else:
+                            self.sound.div_apu_counter = 0
                 self.sound.set(i - 0xFF10, value)
-                if i == 0xFF14:
-                    self.sound.apu_poweron_after_div_write = False
-                if i == 0xFF26 and value & 0x80:
-                    if self.sound.div_apu_counter:
-                        self.sound.div_apu = 1
-                        div_period = 0x2000 << self.sound.speed_shift
-                        cycles_to_div_edge = div_period - (self.timer.DIV_counter & (div_period - 1))
-                        self.sound.cycles_target_512Hz = self.sound.cycles + (
-                            cycles_to_div_edge >> self.sound.speed_shift
-                        )
+                if self.sound.emulate:
+                    if i == 0xFF14:
+                        self.sound.apu_poweron_after_div_write = False
+                    if i == 0xFF26 and value & 0x80:
+                        if self.sound.div_apu_counter:
+                            self.sound.div_apu = 1
+                            div_period = 0x2000 << self.sound.speed_shift
+                            cycles_to_div_edge = div_period - (self.timer.DIV_counter & (div_period - 1))
+                            self.sound.cycles_target_512Hz = self.sound.cycles + (
+                                cycles_to_div_edge >> self.sound.speed_shift
+                            )
             elif 0xFF40 <= i <= 0xFF4B:
                 # An LCDC win-enable write lands on its own cycle: the LCD
                 # sync inside the write stops one dot short, so the write's

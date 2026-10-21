@@ -35,6 +35,7 @@ cdef inline int _tiledata_addr(uint8_t, bint, int) noexcept nogil
 @final
 cdef class LCD:
     cdef bint disable_renderer
+    cdef bint fast_mode
     cdef uint8_t[8 * 1024] VRAM0
     cdef uint8_t[0xA0] OAM
 
@@ -105,6 +106,9 @@ cdef class LCD:
 
     @final
     cdef int64_t cycles_to_mode0(self) noexcept nogil
+    @final
+    @cython.locals(y=int, scx=uint8_t, scy=uint8_t, wx=uint8_t, wy=uint8_t, window_active=bint)
+    cdef void _render_fast_frame(self) noexcept nogil
     @final
     cdef inline bint _is_cgb_hardware(self) noexcept nogil
     @final

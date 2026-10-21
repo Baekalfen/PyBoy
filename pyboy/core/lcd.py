@@ -52,10 +52,11 @@ def _tiledata_addr(tile_index, tdsel, row7):
 
 
 class LCD:
-    def __init__(self, cgb, cgb_mode, color_palette, cgb_color_palette, randomize=False):
+    def __init__(self, cgb, cgb_mode, color_palette, cgb_color_palette, randomize=False, fast_mode=False):
         self.VRAM0 = array("B", [0] * VIDEO_RAM)
         self.OAM = array("B", [0] * OBJECT_ATTRIBUTE_MEMORY)
         self.disable_renderer = False
+        self.fast_mode = fast_mode
 
         if randomize:
             for i in range(VIDEO_RAM):
@@ -428,11 +429,16 @@ class LCD:
         mode2 = 80
         cgb_hardware = self._is_cgb_hardware()
         sprite_line = 0 if mode == 1 else self.LY
-        mode3_adjustment = self._mode3_timing_adjustment(sprite_line)
-        # The STAT mode-3 and mode-0 lengths are the same in double speed as
-        # in normal speed; the mode bits readable from STAT lag the internal
-        # mode change instead [daid/speed_switch_timing_stat, tests/test_daid.py]
-        normal_mode3 = 170 + mode3_adjustment if cgb_hardware else 172 + mode3_adjustment
+        if self.fast_mode:
+            mode3_adjustment = 0
+            normal_mode3 = 172 if self.first_frame or not cgb_hardware else 170
+        else:
+            mode3_adjustment = self._mode3_timing_adjustment(sprite_line)
+            # The STAT mode-3 and mode-0 lengths are the same in double speed
+            # as in normal speed; the mode bits readable from STAT lag the
+            # internal mode change instead [daid/speed_switch_timing_stat,
+            # tests/test_daid.py]
+            normal_mode3 = 170 + mode3_adjustment if cgb_hardware else 172 + mode3_adjustment
 
         if mode == 2:
             mode3 = 172 + mode3_adjustment if self.first_frame else normal_mode3
@@ -569,7 +575,6 @@ class LCD:
                     # book-keeping from the previous frame no longer compares
                     # against it
                     self.stat_mode_lag_until = 0
-                    self.first_frame = False
                     self.clock_target = self.clock_target % FRAME_CYCLES + 80
                     self.next_stat_mode = 3
                     self.stat_transition = STAT_TRANSITION_NONE
@@ -590,6 +595,9 @@ class LCD:
                         interrupt_flag |= stat_irq
                     self.renderer.wy_activated_frame = self._LCDC.window_enable and self.WY == self.LY
                     interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+                    if self.fast_mode and not self.first_frame:
+                        self._render_fast_frame()
+                    self.first_frame = False
 
             elif self._LCDC.lcd_enable and self.stat_transition == STAT_TRANSITION_ADVANCE_LY:
                 self.LY += 1
@@ -691,22 +699,29 @@ class LCD:
                     )
                 elif self._STAT._mode == 3:
                     self.mode3_start_clock = self.clock_target
-                    # The dot renderer's pipeline produces the sprite and
-                    # SCX mode-3 penalties naturally. The analytic estimate
-                    # could overshoot the pipeline's natural finish and cut
-                    # mode 3 short, so start from the unadjusted base
-                    # length and let the pipeline extend it.
                     self.mode3_extension = 0
-                    if self.first_frame:
-                        self.clock_target += 172
-                    elif self._is_cgb_hardware():
-                        self.clock_target += 170
+                    if self.fast_mode:
+                        if self.first_frame or not self._is_cgb_hardware():
+                            self.clock_target += 172
+                        else:
+                            self.clock_target += 170
                     else:
-                        self.clock_target += 172
+                        # The dot renderer's pipeline produces the sprite and
+                        # SCX mode-3 penalties naturally. The analytic estimate
+                        # could overshoot the pipeline's natural finish and cut
+                        # mode 3 short, so start from the unadjusted base length
+                        # and let the pipeline extend it.
+                        if self.first_frame:
+                            self.clock_target += 172
+                        elif self._is_cgb_hardware():
+                            self.clock_target += 170
+                        else:
+                            self.clock_target += 172
                     self.next_stat_mode = 0
                     self.stat_transition = STAT_TRANSITION_NONE
-                    self.renderer.start_dot_line(self.LY)
-                    if self.renderer.dot_mode0_fetcher_based:
+                    if not self.fast_mode:
+                        self.renderer.start_dot_line(self.LY)
+                    if not self.fast_mode and self.renderer.dot_mode0_fetcher_based:
                         # The fetcher-based mode-0 dot is exact, so apply it
                         # directly and shorten HBlank by the same amount. The
                         # pixel pipeline may still be emitting this line's
@@ -758,19 +773,26 @@ class LCD:
                         self.stat_transition = STAT_TRANSITION_NONE
 
                     # Recorded for API
-                    bx, by = self.getviewport()
-                    wx, wy = self.getwindowpos()
-                    self._scanlineparameters[self.LY][0] = bx
-                    self._scanlineparameters[self.LY][1] = by
-                    self._scanlineparameters[self.LY][2] = wx + 7
-                    self._scanlineparameters[self.LY][3] = wy
-                    self._scanlineparameters[self.LY][4] = self._LCDC.tiledata_select
+                    if self.fast_mode:
+                        self._scanlineparameters[self.LY][0] = self.SCX
+                        self._scanlineparameters[self.LY][1] = self.SCY
+                        self._scanlineparameters[self.LY][2] = self.WX
+                        self._scanlineparameters[self.LY][3] = self.WY
+                        self._scanlineparameters[self.LY][4] = self.renderer.wy_activated_frame
+                    else:
+                        bx, by = self.getviewport()
+                        wx, wy = self.getwindowpos()
+                        self._scanlineparameters[self.LY][0] = bx
+                        self._scanlineparameters[self.LY][1] = by
+                        self._scanlineparameters[self.LY][2] = wx + 7
+                        self._scanlineparameters[self.LY][3] = wy
+                        self._scanlineparameters[self.LY][4] = self._LCDC.tiledata_select
 
-                    # The dot renderer's pixel pipeline is still pushing
-                    # the last pixels of this line. It completes during
-                    # early HBlank in tick(), dot-synchronously with the
-                    # CPU, so that register writes on the final pop dots
-                    # are observed at the exact dots as on hardware.
+                        # The dot renderer's pixel pipeline is still pushing
+                        # the last pixels of this line. It completes during
+                        # early HBlank in tick(), dot-synchronously with the
+                        # CPU, so that register writes on the final pop dots
+                        # are observed at the exact dots as on hardware.
                 elif self._STAT._mode == 1:  # VBLANK
                     self.clock_target += 456
                     self.next_stat_mode = 1
@@ -850,6 +872,38 @@ class LCD:
         # TODO: STAT Cycles to interrupts
         self._cycles_to_frame = (FRAME_CYCLES - self.clock) << self.speed_shift
         return interrupt_flag
+
+    def _render_fast_frame(self):
+        if self.disable_renderer:
+            return
+
+        scx = self.SCX
+        scy = self.SCY
+        wx = self.WX
+        wy = self.WY
+        window_active = self.renderer.wy_activated_frame
+        self.renderer.ly_window = -1
+
+        for y in range(ROWS):
+            self.SCX = self._scanlineparameters[y][0]
+            self.SCY = self._scanlineparameters[y][1]
+            self.WX = self._scanlineparameters[y][2]
+            self.WY = self._scanlineparameters[y][3]
+            self.renderer.wy_activated_frame = self._scanlineparameters[y][4]
+
+            if self.cgb:
+                self.renderer.cgb_scanline(y)
+            else:
+                self.renderer.scanline(y)
+            self.renderer.scanline_sprites(
+                y, self.renderer._screenbuffer, self.renderer._screenbuffer_attributes, False
+            )
+
+        self.SCX = scx
+        self.SCY = scy
+        self.WX = wx
+        self.WY = wy
+        self.renderer.wy_activated_frame = window_active
 
     def save_state(self, f):
         for n in range(VIDEO_RAM):

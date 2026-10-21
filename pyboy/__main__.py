@@ -120,6 +120,14 @@ gameboy_type_parser.add_argument(
     "--cgb", action="store_const", const=True, dest="cgb", help="Force emulator to run as Game Boy Color"
 )
 
+parser.add_argument(
+    "--fast",
+    "--fast-mode",
+    dest="fast_mode",
+    action="store_true",
+    help="Use faster, less accurate emulation without sound or serial; simplify LCD timing and rendering",
+)
+
 # NOTE: Inverted logic on variable
 parser.add_argument(
     "--no-sound-emulation",
