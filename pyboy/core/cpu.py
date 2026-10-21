@@ -123,7 +123,7 @@ class CPU:
             f"IE: {self.mb.cpu.interrupts_enabled_register:08b}, "
             f"IF: {self.mb.cpu.interrupts_flag_register:08b}\n"
             f"LCD Intr.: {self.mb.lcd._cycles_to_interrupt}, LY:{self.mb.lcd.LY}, LYC:{self.mb.lcd.LYC}\n"
-            f"Timer Intr.: {self.mb.timer._cycles_to_interrupt}\n"
+            f"Timer IRQ in: {self.mb.timer._cycles_to_irq}\n"
             f"Sound: PCM12:{self.mb.sound.pcm12():02X}, PCM34:{self.mb.sound.pcm34():02X}\n"
             f"Sound CH1: \n"
             f"sound_period: {self.mb.sound.sweepchannel.sound_period}\n"
