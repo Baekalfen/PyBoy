@@ -303,6 +303,10 @@ class CPU:
             pc1 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected, self.PC - 0x4000]
             pc2 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected, self.PC + 1 - 0x4000]
             pc3 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected, self.PC + 2 - 0x4000]
+        elif 0xFF80 <= self.PC and self.PC + 2 < 0xFFFF and not self.mb.oam_dma_active:
+            pc1 = self.mb.ram.internal_ram1[self.PC - 0xFF80]
+            pc2 = self.mb.ram.internal_ram1[self.PC + 1 - 0xFF80]
+            pc3 = self.mb.ram.internal_ram1[self.PC + 2 - 0xFF80]
         else:
             self.memory_access_offset = 0
             pc1 = self.mb.getitem(self.PC)

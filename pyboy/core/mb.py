@@ -567,6 +567,9 @@ class Motherboard:
         return self.getitem((source << 8) | (elapsed >> 2))
 
     def getitem(self, i):
+        if i >= 0xFF00:
+            return self.getitem_io_ports(i)
+
         if 0x0000 <= i < 0x4000:  # 16kB ROM bank #0
             if self.bootrom_enabled and (i <= 0xFF or (self.bootrom.cgb and 0x200 <= i < 0x900)):
                 return self.bootrom.bootrom[i]
