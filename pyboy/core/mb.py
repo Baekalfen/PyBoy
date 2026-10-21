@@ -592,21 +592,31 @@ class Motherboard:
             else:
                 return self.lcd.VRAM1[i - 0x8000]
         elif 0xA000 <= i < 0xC000:  # 8kB switchable RAM bank
+            if not self.cartridge.rambank_enabled:
+                return 0xFF
             if self.cartridge.rtc_enabled and 0x08 <= self.cartridge.rambank_selected <= 0x0C:
                 self.cartridge.rtc_tick(self.cpu.cycles)
-            return self.cartridge.getitem(i)
-        elif 0xC000 <= i < 0xE000:  # 8kB Internal RAM
+                return self.cartridge.rtc.getregister(self.cartridge.rambank_selected)
+            if self.cartridge.rambank_selected >= self.cartridge.external_ram_count:
+                return 0xFF
+            return (
+                self.cartridge.rambanks[
+                    self.cartridge.rambank_selected,
+                    (i - 0xA000) & self.cartridge.ram_address_mask,
+                ]
+                | self.cartridge.ram_value_mask
+            )
+        elif 0xC000 <= i < 0xFE00:  # Internal RAM and its echo
+            if i >= 0xE000:
+                i -= 0x2000
             bank_offset = 0
-            if self.cgb and 0xD000 <= i:
+            if self.cgb and i >= 0xD000:
                 # Find which bank to read from at wram_select
                 bank = self.wram_select
                 if bank == 0x0:
                     bank = 0x01
                 bank_offset = (bank - 1) * 0x1000
             return self.ram.internal_ram0[i - 0xC000 + bank_offset]
-        elif 0xE000 <= i < 0xFE00:  # Echo of 8kB Internal RAM
-            # Redirect to internal RAM
-            return self.getitem(i - 0x2000)
         elif 0xFE00 <= i < 0xFEA0:  # Sprite Attribute Memory (OAM)
             if self.in_tick and not self.oam_dma_reading:
                 if lcd_interrupt := self.lcd.tick(self.cpu.cycles + self.cpu.memory_access_offset):
@@ -806,17 +816,17 @@ class Motherboard:
             if self.cartridge.rtc_enabled and 0x08 <= self.cartridge.rambank_selected <= 0x0C:
                 self.cartridge.rtc_tick(self.cpu.cycles)
             self.cartridge.setitem(i, value)
-        elif 0xC000 <= i < 0xE000:  # 8kB Internal RAM
+        elif 0xC000 <= i < 0xFE00:  # Internal RAM and its echo
+            if i >= 0xE000:
+                i -= 0x2000
             bank_offset = 0
-            if self.cgb and 0xD000 <= i:
+            if self.cgb and i >= 0xD000:
                 # Find which bank to read from at wram_select
                 bank = self.wram_select
                 if bank == 0x0:
                     bank = 0x01
                 bank_offset = (bank - 1) * 0x1000
             self.ram.internal_ram0[i - 0xC000 + bank_offset] = value
-        elif 0xE000 <= i < 0xFE00:  # Echo of 8kB Internal RAM
-            self.setitem(i - 0x2000, value)  # Redirect to internal RAM
         elif 0xFE00 <= i < 0xFEA0:  # Sprite Attribute Memory (OAM)
             if self.in_tick and not self.oam_dma_reading:
                 if lcd_interrupt := self.lcd.tick(self.cpu.cycles + self.cpu.memory_access_offset):

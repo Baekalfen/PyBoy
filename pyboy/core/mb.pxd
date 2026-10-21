@@ -85,14 +85,14 @@ cdef class Motherboard:
 
     cdef void switch_speed(self) noexcept nogil
 
-    @cython.locals(bank_offset=cython.int, bank=cython.int, memory_access_offset=cython.int, dma_started=cython.bint)
+    @cython.locals(bank_offset=uint16_t, bank=uint8_t, memory_access_offset=cython.int, dma_started=cython.bint)
     cdef uint8_t getitem(self, uint16_t) noexcept nogil
     @cython.locals(elapsed=int64_t, target=cython.int, value=uint8_t)
     cdef void sync_oam_dma(self, uint8_t) noexcept nogil
     @cython.locals(elapsed=int64_t)
     cdef int oam_dma_bus_conflict(self, uint16_t, uint8_t) noexcept nogil
     @final
-    @cython.locals(bank_offset=cython.int, bank=cython.int)
+    @cython.locals(bank_offset=uint16_t, bank=uint8_t)
     cdef void setitem(self, uint16_t, uint8_t) noexcept nogil
     cdef uint8_t getitem_io_ports(self, uint16_t) noexcept nogil
     @cython.locals(p14=uint8_t, p15=uint8_t, old_p15=uint8_t,
