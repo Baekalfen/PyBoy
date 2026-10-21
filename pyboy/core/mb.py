@@ -5,6 +5,7 @@
 
 from array import array
 
+import cython
 import pyboy
 from pyboy.utils import (
     STATE_VERSION,
@@ -428,7 +429,7 @@ class Motherboard:
             if self.cgb_mode and self.hdma.transfer_active and self.lcd._STAT._mode & 0b11 != 0:
                 # The PPU left HBlank, so a new block may be copied in the next one
                 self.hdma.block_done = False
-            if (
+            if cython.unlikely(
                 self.cgb_mode
                 and (not self.cpu.halted)
                 and self.hdma.transfer_active
@@ -468,11 +469,11 @@ class Motherboard:
                         mode0_cycles,
                     ),
                 )
-                if self.breakpoint_singlestep:
+                if cython.unlikely(self.breakpoint_singlestep):
                     cycles_target = 4
                 self.cpu.tick(cycles_target)
 
-            if self.oam_dma_active and not self.oam_dma_reading:
+            if cython.unlikely(self.oam_dma_active and not self.oam_dma_reading):
                 self.sync_oam_dma(0)
 
             # TODO: Support General Purpose DMA
@@ -480,13 +481,13 @@ class Motherboard:
 
             self.sound.tick(self.cpu.cycles)
 
-            if self.serial.tick(self.cpu.cycles):
+            if cython.unlikely(self.serial.tick(self.cpu.cycles)):
                 self.cpu.set_interruptflag(INTR_SERIAL)
 
-            if self.timer.tick(self.cpu.cycles):
+            if cython.unlikely(self.timer.tick(self.cpu.cycles)):
                 self.cpu.set_interruptflag(INTR_TIMER)
 
-            if lcd_interrupt := self.lcd.tick(self.cpu.cycles):
+            if cython.unlikely(lcd_interrupt := self.lcd.tick(self.cpu.cycles)):
                 self.cpu.set_interruptflag(lcd_interrupt)
 
             if self.cpu.stopped and not self.cgb:
@@ -496,7 +497,7 @@ class Motherboard:
                 self.lcd.renderer.blank_screen_color(self.lcd.BGP.palette_mem_rgb[0])
                 break
 
-            if self.breakpoint_singlestep:
+            if cython.unlikely(self.breakpoint_singlestep):
                 break
 
         if self.cpu.stopped and not self.cgb:
