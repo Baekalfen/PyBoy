@@ -38,26 +38,7 @@ from pyboy.utils import (
     OPCODE_BRK,
 )
 
-try:
-    import cython
-except ImportError:
-
-    class _mock:
-        def __enter__(self):
-            pass
-
-        def __exit__(self, *args):
-            pass
-
-    exec(
-        """
-class cython:
-    gil = _mock()
-    nogil = _mock()
-""",
-        globals(),
-        locals(),
-    )
+import cython
 
 from .api import Sprite, Tile, constants
 from .core.mb import Motherboard

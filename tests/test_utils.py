@@ -1,6 +1,22 @@
+import runpy
+import sys
+from pathlib import Path
+
 import pytest
 
 from pyboy.utils import WindowEvent
+
+
+def test_cython_stub_without_cython(monkeypatch):
+    monkeypatch.setitem(sys.modules, "cython", None)
+    utils_path = Path(__file__).parents[1] / "pyboy" / "utils.py"
+    namespace = runpy.run_path(str(utils_path))
+
+    assert namespace["cython_compiled"] is False
+    assert namespace["likely"](True) is True
+    assert namespace["unlikely"](False) is False
+    with namespace["cython"].gil, namespace["cython"].nogil:
+        pass
 
 
 def test_window_event_equality_with_window_event():
