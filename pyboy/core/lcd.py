@@ -1286,6 +1286,8 @@ class Renderer:
     def __init__(self, lcd, cgb):
         self.lcd = lcd
         self.cgb = cgb
+        self._background_view_dirty = True
+        self._background_dirty_tile_count = 0
         self.color_format = "RGBA"
 
         self.buffer_dims = (ROWS, COLS)
@@ -1357,6 +1359,7 @@ class Renderer:
         self.reset_dot_pipeline()
 
     def clear_cache(self):
+        self._background_view_dirty = True
         self.clear_tilecache(0)
         if self.cgb:
             self.clear_tilecache(1)
@@ -1364,6 +1367,11 @@ class Renderer:
         self.clear_spritecache(1)
 
     def invalidate_tile(self, tile, vbank):
+        if not self._background_view_dirty:
+            tile_index = tile + vbank * TILES
+            if not self._background_dirty_tiles[tile_index]:
+                self._background_dirty_tiles[tile_index] = 1
+                self._background_dirty_tile_count += 1
         # TODO: Is this right?
         if vbank and self.cgb:
             self._tilecache_state[tile] = 0
@@ -1375,7 +1383,6 @@ class Renderer:
             if self.cgb:
                 self._tilecache_state[tile + TILES] = 0
             self._spritecache_state[tile] = 0
-            self._spritecache_state[tile + TILES] = 0
 
     def _clear_cache(self, cache_state, cache_no):
         for i in range(TILES):
@@ -2927,6 +2934,51 @@ class Renderer:
         if y == 143:
             self.ly_window = -1
 
+    def fast_scanline_sprites(self, ly):
+        if not self.lcd._LCDC.sprite_enable or self.lcd.disable_renderer:
+            return
+
+        spriteheight = 16 if self.lcd._LCDC.sprite_height else 8
+        for n in range(OBJECT_ATTRIBUTE_MEMORY - 4, -1, -4):
+            y = self.lcd.OAM[n] - 16
+            if y <= ly < y + spriteheight:
+                x = self.lcd.OAM[n + 1] - 8
+                tileindex = self.lcd.OAM[n + 2]
+                if spriteheight == 16:
+                    tileindex &= 0b11111110
+                attributes = self.lcd.OAM[n + 3]
+                xflip = attributes & 0b00100000
+                yflip = attributes & 0b01000000
+                sprite_cache_no = 0
+                if self.cgb:
+                    palette = attributes & 0b111
+                    if attributes & 0b1000:
+                        sprite_cache_no = 1
+                else:
+                    palette = 0
+                    if attributes & 0b10000:
+                        sprite_cache_no = 1
+
+                self.update_spritecache(sprite_cache_no, self.lcd, tileindex, sprite_cache_no if self.cgb else 0)
+                if spriteheight == 16:
+                    self.update_spritecache(
+                        sprite_cache_no, self.lcd, tileindex + 1, sprite_cache_no if self.cgb else 0
+                    )
+
+                dy = ly - y
+                yy = spriteheight - dy - 1 if yflip else dy
+                for dx in range(8):
+                    xx = 7 - dx if xflip else dx
+                    color_code = self._spritecache[sprite_cache_no, 8 * tileindex + yy, xx]
+                    if 0 <= x + dx < COLS and color_code:
+                        if self.cgb:
+                            pixel = self.lcd.ocpd.getcolor(palette, color_code)
+                        elif sprite_cache_no:
+                            pixel = self.lcd.OBP1.getcolor(color_code)
+                        else:
+                            pixel = self.lcd.OBP0.getcolor(color_code)
+                        self._screenbuffer[ly, x + dx] = pixel
+
     def sort_sprites(self, sprite_count):
         for i in range(1, sprite_count):
             key = self.sprites_to_render[i]
@@ -3028,36 +3080,246 @@ class Renderer:
         pass
 
 
+class TilemapView:
+    def __init__(self):
+        self.pixels_raw = array("B", [0] * (256 * 256 * 4))
+        self.attributes_raw = array("B", [0] * (256 * 256))
+        self.map_snapshot_raw = array("B", [0] * 1024)
+        self.attributes_snapshot_raw = array("B", [0] * 1024)
+        self.pixels = memoryview(self.pixels_raw).cast("I", shape=(256, 256))
+        self.attributes = memoryview(self.attributes_raw).cast("B", shape=(256, 256))
+        self.map_snapshot = memoryview(self.map_snapshot_raw)
+        self.attributes_snapshot = memoryview(self.attributes_snapshot_raw)
+        if not cython.compiled:
+            self.palette = array("I", [0] * 32)
+        self.map_offset = -1
+        self.tiledata_select = -1
+        self.cgb = False
+        self.dirty = True
+
+
 class FastRenderer(Renderer):
+    def __init__(self, lcd, cgb):
+        Renderer.__init__(self, lcd, cgb)
+        self._background_dirty_tiles_raw = array("B", [0] * (TILES * 2))
+        self._background_dirty_tiles = memoryview(self._background_dirty_tiles_raw)
+        self._background_view = TilemapView()
+        self._window_view = TilemapView()
+
+    def _update_tilemap_view(self, view, map_offset):
+        dirty = self._background_view_dirty or view.dirty
+
+        if (
+            view.map_offset != map_offset
+            or view.tiledata_select != self.lcd._LCDC.tiledata_select
+            or view.cgb != self.cgb
+        ):
+            dirty = True
+
+        if not dirty:
+            if self.cgb:
+                for map_index in range(32):
+                    if view.palette[map_index] != self.lcd.bcpd.palette_mem_rgb[map_index]:
+                        dirty = True
+                        break
+            else:
+                for map_index in range(4):
+                    if view.palette[map_index] != self.lcd.BGP.lookup[map_index]:
+                        dirty = True
+                        break
+
+        for map_y in range(32):
+            for map_x in range(32):
+                map_index = map_y * 32 + map_x
+                map_entry = self.lcd.VRAM0[map_offset + map_index]
+                attribute = 0
+                cell_dirty = dirty or view.map_snapshot[map_index] != map_entry
+                if self.cgb:
+                    attribute = self.lcd.VRAM1[map_offset + map_index]
+                    if view.attributes_snapshot[map_index] != attribute:
+                        cell_dirty = True
+
+                if cell_dirty or self._background_dirty_tile_count:
+                    tile, yy, tile_addr = self._get_tile(map_y * 8, map_x * 8, map_offset, self.lcd)
+                    palette = 0
+                    vbank = 0
+                    horiflip = False
+                    vertflip = False
+                    bg_priority_apply = 0
+
+                    if self.cgb:
+                        palette, vbank, horiflip, vertflip, bg_priority = self._cgb_get_background_map_attributes(
+                            self.lcd, tile_addr
+                        )
+                        if bg_priority:
+                            bg_priority_apply = BG_PRIORITY_FLAG
+
+                    if not dirty and not cell_dirty and self._background_dirty_tile_count:
+                        tile_index = tile + vbank * TILES
+                        if self._background_dirty_tiles[tile_index]:
+                            cell_dirty = True
+
+                    if cell_dirty:
+                        self.update_tilecache(vbank, self.lcd, tile, vbank)
+                        for pixel_y in range(8):
+                            yy = tile * 8 + (7 - pixel_y if vertflip else pixel_y)
+                            for pixel_x in range(8):
+                                xx = 7 - pixel_x if horiflip else pixel_x
+                                color_index = self._tilecache[vbank, yy, xx]
+                                if self.cgb:
+                                    pixel = self.lcd.bcpd.getcolor(palette, color_index)
+                                else:
+                                    pixel = self.lcd.BGP.getcolor(color_index)
+
+                                view.pixels[map_y * 8 + pixel_y, map_x * 8 + pixel_x] = pixel
+                                view.attributes[map_y * 8 + pixel_y, map_x * 8 + pixel_x] = bg_priority_apply | (
+                                    (color_index == 0) & 1
+                                )
+
+                view.map_snapshot[map_index] = map_entry
+                if self.cgb:
+                    view.attributes_snapshot[map_index] = attribute
+
+        if self.cgb:
+            for map_index in range(32):
+                view.palette[map_index] = self.lcd.bcpd.palette_mem_rgb[map_index]
+        else:
+            for map_index in range(4):
+                view.palette[map_index] = self.lcd.BGP.lookup[map_index]
+
+        view.map_offset = map_offset
+        view.tiledata_select = self.lcd._LCDC.tiledata_select
+        view.cgb = self.cgb
+        view.dirty = False
+
+    def update_background_view(self):
+        background_enabled = self.cgb or self.lcd._LCDC.background_enable
+        window_visible = False
+        if self.lcd._LCDC.window_enable:
+            for y in range(ROWS):
+                wx = self.lcd._scanlineparameters[y][2] - 7
+                if self.lcd._scanlineparameters[y][4] and wx < COLS:
+                    window_visible = True
+                    break
+
+        background_map_offset = self.lcd._LCDC.backgroundmap_offset
+        window_map_offset = self.lcd._LCDC.windowmap_offset
+        update_background = background_enabled or (window_visible and window_map_offset == background_map_offset)
+        update_window = window_visible and window_map_offset != background_map_offset
+
+        if update_background:
+            self._update_tilemap_view(self._background_view, background_map_offset)
+        else:
+            self._background_view.dirty = True
+
+        if update_window:
+            self._update_tilemap_view(self._window_view, window_map_offset)
+        else:
+            self._window_view.dirty = True
+
+        if update_background or update_window:
+            self._background_view_dirty = False
+            if self._background_dirty_tile_count:
+                for tile_index in range(TILES * 2):
+                    self._background_dirty_tiles[tile_index] = 0
+                self._background_dirty_tile_count = 0
+
+    def copy_tilemap_scanline(self, view, y, dest_x, source_y, source_x, cols):
+        if cols <= 0:
+            return
+
+        map_y = source_y & 0xFF
+        map_x = source_x & 0xFF
+        copy_len = min(cols, 256 - map_x)
+        if cython.compiled:
+            _copy_background_pixels(self._screenbuffer, view.pixels, y, dest_x, map_y, map_x, copy_len)
+            _copy_background_attributes(
+                self._screenbuffer_attributes, view.attributes, y, dest_x, map_y, map_x, copy_len
+            )
+        else:
+            dest_pixel = (y * COLS + dest_x) * 4
+            source_pixel = (map_y * 256 + map_x) * 4
+            self._screenbuffer_raw[dest_pixel : dest_pixel + copy_len * 4] = view.pixels_raw[
+                source_pixel : source_pixel + copy_len * 4
+            ]
+            dest_attribute = y * COLS + dest_x
+            source_attribute = map_y * 256 + map_x
+            self._screenbuffer_attributes_raw[dest_attribute : dest_attribute + copy_len] = view.attributes_raw[
+                source_attribute : source_attribute + copy_len
+            ]
+
+        remaining = cols - copy_len
+        if remaining:
+            if cython.compiled:
+                _copy_background_pixels(self._screenbuffer, view.pixels, y, dest_x + copy_len, map_y, 0, remaining)
+                _copy_background_attributes(
+                    self._screenbuffer_attributes,
+                    view.attributes,
+                    y,
+                    dest_x + copy_len,
+                    map_y,
+                    0,
+                    remaining,
+                )
+            else:
+                dest_pixel = (y * COLS + dest_x + copy_len) * 4
+                source_pixel = map_y * 256 * 4
+                self._screenbuffer_raw[dest_pixel : dest_pixel + remaining * 4] = view.pixels_raw[
+                    source_pixel : source_pixel + remaining * 4
+                ]
+                dest_attribute = y * COLS + dest_x + copy_len
+                source_attribute = map_y * 256
+                self._screenbuffer_attributes_raw[dest_attribute : dest_attribute + remaining] = view.attributes_raw[
+                    source_attribute : source_attribute + remaining
+                ]
+
+    def render_scanline(self, y, window_line):
+        bx = self.lcd._scanlineparameters[y][0]
+        by = self.lcd._scanlineparameters[y][1]
+        wx = self.lcd._scanlineparameters[y][2] - 7
+        window_active = self.lcd._scanlineparameters[y][4]
+        background_enabled = self.cgb or self.lcd._LCDC.background_enable
+
+        if self.cgb:
+            if self.lcd._LCDC.window_enable and window_active and wx < COLS:
+                x = max(wx, 0)
+                self.copy_tilemap_scanline(self._background_view, y, 0, y + by, bx, x)
+                if self.lcd._LCDC.windowmap_offset == self.lcd._LCDC.backgroundmap_offset:
+                    self.copy_tilemap_scanline(self._background_view, y, x, window_line, x - wx, COLS - x)
+                else:
+                    self.copy_tilemap_scanline(self._window_view, y, x, window_line, x - wx, COLS - x)
+            else:
+                self.copy_tilemap_scanline(self._background_view, y, 0, y + by, bx, COLS)
+        else:
+            if self.lcd._LCDC.window_enable and window_active and wx < COLS:
+                x = max(wx, 0)
+                if background_enabled:
+                    self.copy_tilemap_scanline(self._background_view, y, 0, y + by, bx, x)
+                else:
+                    self.scanline_blank(y, 0, x, self.lcd)
+                if self.lcd._LCDC.windowmap_offset == self.lcd._LCDC.backgroundmap_offset:
+                    self.copy_tilemap_scanline(self._background_view, y, x, window_line, x - wx, COLS - x)
+                else:
+                    self.copy_tilemap_scanline(self._window_view, y, x, window_line, x - wx, COLS - x)
+            elif background_enabled:
+                self.copy_tilemap_scanline(self._background_view, y, 0, y + by, bx, COLS)
+            else:
+                self.scanline_blank(y, 0, COLS, self.lcd)
+        self.fast_scanline_sprites(y)
+
     def render_frame(self):
         if self.lcd.disable_renderer:
             return
 
-        scx = self.lcd.SCX
-        scy = self.lcd.SCY
-        wx = self.lcd.WX
-        wy = self.lcd.WY
-        window_active = self.wy_activated_frame
-        self.ly_window = -1
-
+        self.update_background_view()
+        window_line = -1
         for y in range(ROWS):
-            self.lcd.SCX = self.lcd._scanlineparameters[y][0]
-            self.lcd.SCY = self.lcd._scanlineparameters[y][1]
-            self.lcd.WX = self.lcd._scanlineparameters[y][2]
-            self.lcd.WY = self.lcd._scanlineparameters[y][3]
-            self.wy_activated_frame = self.lcd._scanlineparameters[y][4]
+            wx = self.lcd._scanlineparameters[y][2] - 7
+            if self.lcd._LCDC.window_enable and self.lcd._scanlineparameters[y][4] and wx < COLS:
+                window_line += 1
+            self.render_scanline(y, window_line)
 
-            if self.cgb:
-                self.cgb_scanline(y)
-            else:
-                self.scanline(y)
-            self.scanline_sprites(y, self._screenbuffer, self._screenbuffer_attributes, False)
-
-        self.lcd.SCX = scx
-        self.lcd.SCY = scy
-        self.lcd.WX = wx
-        self.lcd.WY = wy
-        self.wy_activated_frame = window_active
+        self.ly_window = -1
 
 class VBKregister:
     def __init__(self, value=0):
