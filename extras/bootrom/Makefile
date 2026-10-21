@@ -4,7 +4,7 @@
 all: build
 
 PY := python3
-ROOT_DIR := $(shell git rev-parse --show-toplevel)
+ROOT_DIR ?= $(shell git rev-parse --show-toplevel)
 
 build:
 	${PY} logo_to_tiles.py
