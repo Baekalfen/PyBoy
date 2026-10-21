@@ -195,7 +195,7 @@ cdef class MemoryWindow(BaseDebugWindow):
     cdef void render_text(self) noexcept
     @cython.locals(i=int, c=uint8_t)
     cdef void draw_text(self, int, int, uint8_t[:]) noexcept
-    cdef void _scroll_view(self, int)
+    cdef void _scroll_view(self, int) noexcept
 
 
 cdef class GameAreaWindow(BaseDebugWindow):
