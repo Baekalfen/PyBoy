@@ -53,11 +53,10 @@ def _tiledata_addr(tile_index, tdsel, row7):
 
 
 class LCD:
-    def __init__(self, cgb, cgb_mode, color_palette, cgb_color_palette, randomize=False, fast_mode=False):
+    def __init__(self, cgb, cgb_mode, color_palette, cgb_color_palette, randomize=False):
         self.VRAM0 = array("B", [0] * VIDEO_RAM)
         self.OAM = array("B", [0] * OBJECT_ATTRIBUTE_MEMORY)
         self.disable_renderer = False
-        self.fast_mode = fast_mode
 
         if randomize:
             for i in range(VIDEO_RAM):
@@ -117,7 +116,7 @@ class LCD:
             self.BGP = PaletteRegister(0xFC, color_palette)
             self.OBP0 = PaletteRegister(0xFF, color_palette)
             self.OBP1 = PaletteRegister(0xFF, color_palette)
-        self.renderer = Renderer(self, self.cgb)
+        self.renderer = self._create_renderer()
 
         # CGB specific
         if self.cgb:
@@ -128,6 +127,9 @@ class LCD:
             self.bcpd = PaletteColorRegister(self.bcps)
             self.ocps = PaletteIndexRegister()  # Only stored here for access in mb
             self.ocpd = PaletteColorRegister(self.ocps)
+
+    def _create_renderer(self):
+        return Renderer(self, self.cgb)
 
     def switch_cgb(self, is_dmg_rom):
         # Bootrom requests CGB hardware to switch to DMG rendering. This is only
@@ -430,19 +432,11 @@ class LCD:
         mode2 = 80
         cgb_hardware = self._is_cgb_hardware()
         sprite_line = 0 if mode == 1 else self.LY
-        if self.fast_mode:
-            mode3_adjustment = 0
-            normal_mode3 = 172 if self.first_frame or not cgb_hardware else 170
-        else:
-            mode3_adjustment = self._mode3_timing_adjustment(sprite_line)
-            # The STAT mode-3 and mode-0 lengths are the same in double speed
-            # as in normal speed; the mode bits readable from STAT lag the
-            # internal mode change instead [daid/speed_switch_timing_stat,
-            # tests/test_daid.py]
-            normal_mode3 = 170 + mode3_adjustment if cgb_hardware else 172 + mode3_adjustment
+        mode3_adjustment = self._mode3_timing_adjustment(sprite_line)
+        normal_mode3 = 170 + mode3_adjustment if cgb_hardware else 172 + mode3_adjustment
+        mode3 = 172 + mode3_adjustment if self.first_frame else normal_mode3
 
         if mode == 2:
-            mode3 = 172 + mode3_adjustment if self.first_frame else normal_mode3
             return remainder + mode3
         elif mode == 1:
             if self.stat_transition == STAT_TRANSITION_LY153_DMG:
@@ -598,8 +592,6 @@ class LCD:
                         interrupt_flag |= stat_irq
                     self.renderer.wy_activated_frame = self._LCDC.window_enable and self.WY == self.LY
                     interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
-                    if self.fast_mode and not self.first_frame:
-                        self._render_fast_frame()
                     self.first_frame = False
 
             elif self._LCDC.lcd_enable and self.stat_transition == STAT_TRANSITION_ADVANCE_LY:
@@ -703,28 +695,21 @@ class LCD:
                 elif self._STAT._mode == 3:
                     self.mode3_start_clock = self.clock_target
                     self.mode3_extension = 0
-                    if self.fast_mode:
-                        if self.first_frame or not self._is_cgb_hardware():
-                            self.clock_target += 172
-                        else:
-                            self.clock_target += 170
+                    # The dot renderer's pipeline produces the sprite and
+                    # SCX mode-3 penalties naturally. The analytic estimate
+                    # could overshoot the pipeline's natural finish and cut
+                    # mode 3 short, so start from the unadjusted base length
+                    # and let the pipeline extend it.
+                    if self.first_frame:
+                        self.clock_target += 172
+                    elif self._is_cgb_hardware():
+                        self.clock_target += 170
                     else:
-                        # The dot renderer's pipeline produces the sprite and
-                        # SCX mode-3 penalties naturally. The analytic estimate
-                        # could overshoot the pipeline's natural finish and cut
-                        # mode 3 short, so start from the unadjusted base length
-                        # and let the pipeline extend it.
-                        if self.first_frame:
-                            self.clock_target += 172
-                        elif self._is_cgb_hardware():
-                            self.clock_target += 170
-                        else:
-                            self.clock_target += 172
+                        self.clock_target += 172
                     self.next_stat_mode = 0
                     self.stat_transition = STAT_TRANSITION_NONE
-                    if not self.fast_mode:
-                        self.renderer.start_dot_line(self.LY)
-                    if not self.fast_mode and self.renderer.dot_mode0_fetcher_based:
+                    self.renderer.start_dot_line(self.LY)
+                    if self.renderer.dot_mode0_fetcher_based:
                         # The fetcher-based mode-0 dot is exact, so apply it
                         # directly and shorten HBlank by the same amount. The
                         # pixel pipeline may still be emitting this line's
@@ -776,26 +761,19 @@ class LCD:
                         self.stat_transition = STAT_TRANSITION_NONE
 
                     # Recorded for API
-                    if self.fast_mode:
-                        self._scanlineparameters[self.LY][0] = self.SCX
-                        self._scanlineparameters[self.LY][1] = self.SCY
-                        self._scanlineparameters[self.LY][2] = self.WX
-                        self._scanlineparameters[self.LY][3] = self.WY
-                        self._scanlineparameters[self.LY][4] = self.renderer.wy_activated_frame
-                    else:
-                        bx, by = self.getviewport()
-                        wx, wy = self.getwindowpos()
-                        self._scanlineparameters[self.LY][0] = bx
-                        self._scanlineparameters[self.LY][1] = by
-                        self._scanlineparameters[self.LY][2] = wx + 7
-                        self._scanlineparameters[self.LY][3] = wy
-                        self._scanlineparameters[self.LY][4] = self._LCDC.tiledata_select
+                    bx, by = self.getviewport()
+                    wx, wy = self.getwindowpos()
+                    self._scanlineparameters[self.LY][0] = bx
+                    self._scanlineparameters[self.LY][1] = by
+                    self._scanlineparameters[self.LY][2] = wx + 7
+                    self._scanlineparameters[self.LY][3] = wy
+                    self._scanlineparameters[self.LY][4] = self._LCDC.tiledata_select
 
-                        # The dot renderer's pixel pipeline is still pushing
-                        # the last pixels of this line. It completes during
-                        # early HBlank in tick(), dot-synchronously with the
-                        # CPU, so that register writes on the final pop dots
-                        # are observed at the exact dots as on hardware.
+                    # The dot renderer's pixel pipeline is still pushing
+                    # the last pixels of this line. It completes during
+                    # early HBlank in tick(), dot-synchronously with the
+                    # CPU, so that register writes on the final pop dots
+                    # are observed at the exact dots as on hardware.
                 elif self._STAT._mode == 1:  # VBLANK
                     self.clock_target += 456
                     self.next_stat_mode = 1
@@ -875,38 +853,6 @@ class LCD:
         # TODO: STAT Cycles to interrupts
         self._cycles_to_frame = (FRAME_CYCLES - self.clock) << self.speed_shift
         return interrupt_flag
-
-    def _render_fast_frame(self):
-        if self.disable_renderer:
-            return
-
-        scx = self.SCX
-        scy = self.SCY
-        wx = self.WX
-        wy = self.WY
-        window_active = self.renderer.wy_activated_frame
-        self.renderer.ly_window = -1
-
-        for y in range(ROWS):
-            self.SCX = self._scanlineparameters[y][0]
-            self.SCY = self._scanlineparameters[y][1]
-            self.WX = self._scanlineparameters[y][2]
-            self.WY = self._scanlineparameters[y][3]
-            self.renderer.wy_activated_frame = self._scanlineparameters[y][4]
-
-            if self.cgb:
-                self.renderer.cgb_scanline(y)
-            else:
-                self.renderer.scanline(y)
-            self.renderer.scanline_sprites(
-                y, self.renderer._screenbuffer, self.renderer._screenbuffer_attributes, False
-            )
-
-        self.SCX = scx
-        self.SCY = scy
-        self.WX = wx
-        self.WY = wy
-        self.renderer.wy_activated_frame = window_active
 
     def save_state(self, f):
         for n in range(VIDEO_RAM):
@@ -1063,6 +1009,169 @@ class LCD:
         return (self.SCX, self.SCY)
 
 
+class FastLCD(LCD):
+    def _create_renderer(self):
+        return FastRenderer(self, self.cgb)
+
+    def cycles_to_mode0(self):
+        mode = self._STAT._mode & 0b11
+        remainder = self.clock_target - self.clock
+
+        if mode == 0:
+            return 0
+        elif mode == 3:
+            return remainder
+
+        mode2 = 80
+        mode3 = 172
+        if mode == 2:
+            return remainder + mode3
+        elif mode == 1:
+            remaining_ly = 153 - self.LY
+            return remainder + 456 * remaining_ly + mode2 + mode3
+
+    def tick(self, _cycles):
+        cycles = _cycles - self.last_cycles
+        if cycles == 0:
+            return False
+        self.last_cycles = _cycles
+
+        interrupt_flag = 0
+        self.clock += cycles >> self.speed_shift
+        vblank_stat_pretriggered = False
+
+        if self.clock >= self.clock_target:
+            if cython.unlikely(self._LCDC.lcd_enable and self.reset):
+                self.reset = False
+                self.frame_done = True
+
+                self.LY = 0
+                self.clock = 0
+                self.clock_target = 76
+                self.next_stat_mode = 3
+                self.stat_transition = STAT_TRANSITION_NONE
+                interrupt_flag |= self._STAT.set_mode(0)
+                self.renderer.wy_activated_frame = self.WY == self.LY
+                interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+
+            elif cython.unlikely(self._LCDC.lcd_enable and self.LY == 153):
+                if self.first_frame and self.clock_target < FRAME_CYCLES:
+                    self.clock_target = FRAME_CYCLES
+                else:
+                    self.frame_done = True
+                    self.LY = 0
+                    self.clock %= FRAME_CYCLES
+                    self.clock_target = self.clock_target % FRAME_CYCLES + 80
+                    self.next_stat_mode = 3
+                    self.stat_transition = STAT_TRANSITION_NONE
+                    interrupt_flag |= self._STAT.set_mode(2)
+                    self.renderer.wy_activated_frame = self.WY == self.LY
+                    interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+                    if not self.first_frame:
+                        self.renderer.render_frame()
+                    self.first_frame = False
+
+            elif self._LCDC.lcd_enable and self.stat_transition == STAT_TRANSITION_ADVANCE_LY:
+                self.LY += 1
+                if self.first_frame:
+                    self._STAT.value &= 0xFB
+                    interrupt_flag |= self._STAT._update_irq_line()
+                else:
+                    interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+                self.clock_target += 4
+                self.stat_transition = STAT_TRANSITION_START_MODE2
+
+            elif self._LCDC.lcd_enable and self.stat_transition == STAT_TRANSITION_START_MODE2:
+                interrupt_flag |= self._STAT.set_mode(2)
+                if self.first_frame:
+                    interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+                self.clock_target += 80
+                self.next_stat_mode = 3
+                self.stat_transition = STAT_TRANSITION_NONE
+                self.renderer.wy_activated_frame = self.renderer.wy_activated_frame | (self.WY == self.LY)
+
+            elif self._LCDC.lcd_enable:
+                if self.stat_transition == STAT_TRANSITION_VBLANK_PRETRIGGERED:
+                    self.stat_transition = STAT_TRANSITION_NONE
+                previous_mode = self._STAT._mode
+                interrupt_flag |= self._STAT.set_mode(self.next_stat_mode)
+
+                if self._STAT._mode == 2:
+                    self.LY += 1
+                    self.clock_target += 80
+                    self.next_stat_mode = 3
+                    self.stat_transition = STAT_TRANSITION_NONE
+                    interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+                    self.renderer.wy_activated_frame = self.renderer.wy_activated_frame | (self.WY == self.LY)
+                elif self._STAT._mode == 3:
+                    self.mode3_adjustment = 0
+                    if not self.first_frame and previous_mode == 0:
+                        self.LY += 1
+                        interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+                        self.renderer.wy_activated_frame = self.renderer.wy_activated_frame | (self.WY == self.LY)
+                        self.clock_target += 252
+                    else:
+                        self.clock_target += 172
+                    self.next_stat_mode = 0
+                    self.stat_transition = STAT_TRANSITION_NONE
+                elif self._STAT._mode == 0:
+                    if self.first_frame:
+                        self.clock_target += 200 - self.mode3_adjustment
+                        if self.LY < 143:
+                            self.next_stat_mode = 2
+                            self.stat_transition = STAT_TRANSITION_ADVANCE_LY
+                        else:
+                            self.next_stat_mode = 1
+                            self.stat_transition = STAT_TRANSITION_NONE
+                    else:
+                        self.clock_target += 204
+                        self.next_stat_mode = 3 if self.LY < 143 else 1
+                        self.stat_transition = STAT_TRANSITION_NONE
+
+                    bx, by = self.getviewport()
+                    wx, wy = self.getwindowpos()
+                    self._scanlineparameters[self.LY][0] = self.SCX
+                    self._scanlineparameters[self.LY][1] = self.SCY
+                    self._scanlineparameters[self.LY][2] = self.WX
+                    self._scanlineparameters[self.LY][3] = self.WY
+                    self._scanlineparameters[self.LY][4] = self.renderer.wy_activated_frame
+                elif self._STAT._mode == 1:
+                    self.clock_target += 456
+                    self.next_stat_mode = 1
+                    self.stat_transition = STAT_TRANSITION_NONE
+
+                    self.LY += 1
+                    interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+
+                    if self.LY == 144:
+                        if self._STAT.value & 0x20 and not self._STAT._irq_line and not vblank_stat_pretriggered:
+                            interrupt_flag |= INTR_LCDC
+                        interrupt_flag |= INTR_VBLANK
+                        self.renderer.wy_activated_frame = False
+                        if self.first_frame:
+                            self.renderer.blank_screen()
+            else:
+                self.frame_done = True
+                self.clock %= FRAME_CYCLES
+                self.clock_target = FRAME_CYCLES
+                self.renderer.blank_screen()
+
+        cycles_to_interrupt = self.clock_target - self.clock
+        self._cycles_to_interrupt = cycles_to_interrupt << self.speed_shift
+        self._cycles_to_frame = (FRAME_CYCLES - self.clock) << self.speed_shift
+        return interrupt_flag
+
+    def load_state(self, f, state_version):
+        LCD.load_state(self, f, state_version)
+        self.mode3_adjustment = 0
+        if (
+            self._should_pretrigger_vblank_stat()
+            and self.clock <= self.clock_target
+            and self.clock_target - self.clock >= 4
+        ):
+            self._cycles_to_interrupt += 4 << self.speed_shift
+
+
 class PaletteRegister:
     def __init__(self, value, palette):
         self.value = 0
@@ -1165,6 +1274,9 @@ class LCDCRegister:
         self.cgb_master_priority  = self.background_enable # Different meaning on CGB
         # fmt: on
 
+        self.backgroundmap_offset = 0x1800 if self.backgroundmap_select == 0 else 0x1C00
+        self.windowmap_offset = 0x1800 if self.windowmap_select == 0 else 0x1C00
+
 
 COL0_FLAG = 0b01
 BG_PRIORITY_FLAG = 0b10
@@ -1231,6 +1343,7 @@ class Renderer:
         # WY has a strange behavior described at:
         # https://gbdev.io/pandocs/Scrolling.html#window
         self.wy_activated_frame = False
+        self.ly_window = 0
 
         # State for the dot-accurate renderer. reset_dot_pipeline neutralizes
         # the scalar state to what a running renderer holds between frames,
@@ -2684,6 +2797,267 @@ class Renderer:
     #  ██████   ██████   ██████
     #
 
+    def _cgb_get_background_map_attributes(self, lcd, i):
+        tile_num = self.lcd.VRAM1[i]
+        palette = tile_num & 0b111
+        vbank = (tile_num >> 3) & 1
+        horiflip = (tile_num >> 5) & 1
+        vertflip = (tile_num >> 6) & 1
+        bg_priority = (tile_num >> 7) & 1
+
+        return palette, vbank, horiflip, vertflip, bg_priority
+
+    def scanline(self, y):
+        if self.lcd.disable_renderer:
+            return
+
+        bx, by = self.lcd.getviewport()
+        wx, wy = self.lcd.getwindowpos()
+        x = 0
+        if self.lcd._LCDC.window_enable and self.wy_activated_frame and wx < COLS:
+            self.ly_window += 1
+            if wx > x:
+                x += self.scanline_background(y, x, bx, by, wx, self.lcd)
+            self.scanline_window(y, x, wx, wy, COLS - x, self.lcd, self.ly_window)
+        elif self.lcd._LCDC.background_enable:
+            self.scanline_background(y, x, bx, by, COLS, self.lcd)
+        else:
+            self.scanline_blank(y, x, COLS, self.lcd)
+
+        if y == 143:
+            self.ly_window = -1
+
+    def _get_tile(self, y, x, offset, lcd):
+        tile_addr = offset + y // 8 * 32 % 0x400 + x // 8 % 32
+        tile = lcd.VRAM0[tile_addr]
+        if not lcd._LCDC.tiledata_select:
+            tile = (tile ^ 0x80) + 128
+        yy = 8 * tile + y % 8
+        return tile, yy, tile_addr
+
+    def _pixel(self, cache_index, pixel, x, y, xx, yy, bg_priority_apply):
+        col0 = (self._tilecache[cache_index, yy, xx] == 0) & 1
+        self._screenbuffer[y, x] = pixel
+        self._screenbuffer_attributes[y, x] = bg_priority_apply | col0
+
+    def scanline_window(self, y, _x, wx, wy, cols, lcd, window_line):
+        for x in range(_x, _x + cols):
+            xx = (x - wx) % 8
+            if xx == 0 or x == _x:
+                wt, yy, _ = self._get_tile(window_line, x - wx, lcd._LCDC.windowmap_offset, lcd)
+                self.update_tilecache(0, lcd, wt, 0)
+
+            pixel = lcd.BGP.getcolor(self._tilecache[0, yy, xx])
+            self._pixel(0, pixel, x, y, xx, yy, 0)
+        return cols
+
+    def scanline_background(self, y, _x, bx, by, cols, lcd):
+        for x in range(_x, _x + cols):
+            b_xx = (x + (bx & 0b111)) % 8
+            if b_xx == 0 or x == 0:
+                bt, b_yy, _ = self._get_tile(y + by, x + bx, lcd._LCDC.backgroundmap_offset, lcd)
+                self.update_tilecache(0, lcd, bt, 0)
+
+            pixel = lcd.BGP.getcolor(self._tilecache[0, b_yy, b_xx])
+            self._pixel(0, pixel, x, y, b_xx, b_yy, 0)
+        return cols
+
+    def scanline_blank(self, y, _x, cols, lcd):
+        for x in range(_x, _x + cols):
+            self._screenbuffer[y, x] = lcd.BGP.getcolor(0)
+            self._screenbuffer_attributes[y, x] = COL0_FLAG
+        return cols
+
+    def _cgb_get_tile(self, y, x, offset, lcd):
+        tile, yy, tile_addr = self._get_tile(y, x, offset, lcd)
+        palette, vbank, horiflip, vertflip, bg_priority = self._cgb_get_background_map_attributes(lcd, tile_addr)
+        bg_priority_apply = BG_PRIORITY_FLAG if bg_priority else 0
+        if vertflip:
+            yy = 8 * tile + (7 - y % 8)
+        return tile, yy, palette, horiflip, bg_priority_apply, vbank
+
+    def cgb_scanline_window(self, y, _x, wx, wy, cols, lcd, window_line):
+        bg_priority_apply = 0
+        for x in range(_x, _x + cols):
+            xx = (x - wx) % 8
+            if xx == 0 or x == _x:
+                wt, yy, w_palette, w_horiflip, bg_priority_apply, vbank = self._cgb_get_tile(
+                    window_line, x - wx, lcd._LCDC.windowmap_offset, lcd
+                )
+                self.update_tilecache(vbank, lcd, wt, vbank)
+
+            if w_horiflip:
+                xx = 7 - xx
+
+            pixel = lcd.bcpd.getcolor(w_palette, self._tilecache[vbank, yy, xx])
+            self._pixel(vbank, pixel, x, y, xx, yy, bg_priority_apply)
+        return cols
+
+    def cgb_scanline_background(self, y, _x, bx, by, cols, lcd):
+        for x in range(_x, _x + cols):
+            xx = (x + (bx & 0b111)) % 8
+            if xx == 0 or x == 0:
+                bt, yy, b_palette, b_horiflip, bg_priority_apply, vbank = self._cgb_get_tile(
+                    y + by, x + bx, lcd._LCDC.backgroundmap_offset, lcd
+                )
+                self.update_tilecache(vbank, lcd, bt, vbank)
+
+            if b_horiflip:
+                xx = 7 - xx
+
+            pixel = lcd.bcpd.getcolor(b_palette, self._tilecache[vbank, yy, xx])
+            self._pixel(vbank, pixel, x, y, xx, yy, bg_priority_apply)
+        return cols
+
+    def cgb_scanline(self, y):
+        if self.lcd.disable_renderer:
+            return
+
+        bx, by = self.lcd.getviewport()
+        wx, wy = self.lcd.getwindowpos()
+        x = 0
+        if self.lcd._LCDC.window_enable and self.wy_activated_frame and wx < COLS:
+            self.ly_window += 1
+            if wx > x:
+                x += self.cgb_scanline_background(y, x, bx, by, wx, self.lcd)
+            self.cgb_scanline_window(y, x, wx, wy, COLS - x, self.lcd, self.ly_window)
+        else:
+            self.cgb_scanline_background(y, x, bx, by, COLS, self.lcd)
+
+        if y == 143:
+            self.ly_window = -1
+
+    def sort_sprites(self, sprite_count):
+        for i in range(1, sprite_count):
+            key = self.sprites_to_render[i]
+            j = i - 1
+            while j >= 0 and key > self.sprites_to_render[j]:
+                self.sprites_to_render[j + 1] = self.sprites_to_render[j]
+                j -= 1
+            self.sprites_to_render[j + 1] = key
+
+    def scanline_sprites(self, ly, buffer, buffer_attributes, ignore_priority):
+        if not self.lcd._LCDC.sprite_enable or self.lcd.disable_renderer:
+            return
+
+        spriteheight = 16 if self.lcd._LCDC.sprite_height else 8
+        sprite_count = 0
+        for n in range(0x00, OBJECT_ATTRIBUTE_MEMORY, 4):
+            y = self.lcd.OAM[n] - 16
+            x = self.lcd.OAM[n + 1] - 8
+
+            if y <= ly < y + spriteheight:
+                if self.cgb:
+                    self.sprites_to_render[sprite_count] = n
+                else:
+                    self.sprites_to_render[sprite_count] = x << 16 | n
+                sprite_count += 1
+
+            if sprite_count == 10:
+                break
+
+        self.sort_sprites(sprite_count)
+
+        for _n in self.sprites_to_render[:sprite_count]:
+            if self.cgb:
+                n = _n
+            else:
+                n = _n & 0xFF
+            y = self.lcd.OAM[n] - 16
+            x = self.lcd.OAM[n + 1] - 8
+            tileindex = self.lcd.OAM[n + 2]
+            if spriteheight == 16:
+                tileindex &= 0b11111110
+            attributes = self.lcd.OAM[n + 3]
+            xflip = attributes & 0b00100000
+            yflip = attributes & 0b01000000
+            spritepriority = (attributes & 0b10000000) and not ignore_priority
+            sprite_cache_no = 0
+            if self.cgb:
+                palette = attributes & 0b111
+                if attributes & 0b1000:
+                    sprite_cache_no = 1
+            else:
+                palette = 0
+                if attributes & 0b10000:
+                    sprite_cache_no = 1
+
+            self.update_spritecache(sprite_cache_no, self.lcd, tileindex, sprite_cache_no if self.cgb else 0)
+            if self.lcd._LCDC.sprite_height:
+                self.update_spritecache(
+                    sprite_cache_no, self.lcd, tileindex + 1, sprite_cache_no if self.cgb else 0
+                )
+
+            dy = ly - y
+            yy = spriteheight - dy - 1 if yflip else dy
+
+            for dx in range(8):
+                xx = 7 - dx if xflip else dx
+                color_code = self._spritecache[sprite_cache_no, 8 * tileindex + yy, xx]
+                if 0 <= x < COLS and color_code != 0:
+                    if self.cgb:
+                        pixel = self.lcd.ocpd.getcolor(palette, color_code)
+                        bgmappriority = buffer_attributes[ly, x] & BG_PRIORITY_FLAG
+
+                        if self.lcd._LCDC.cgb_master_priority:
+                            if bgmappriority:
+                                if buffer_attributes[ly, x] & COL0_FLAG:
+                                    buffer[ly, x] = pixel
+                            elif spritepriority:
+                                if buffer_attributes[ly, x] & COL0_FLAG:
+                                    buffer[ly, x] = pixel
+                            else:
+                                buffer[ly, x] = pixel
+                        else:
+                            buffer[ly, x] = pixel
+                    else:
+                        if attributes & 0b10000:
+                            pixel = self.lcd.OBP1.getcolor(color_code)
+                        else:
+                            pixel = self.lcd.OBP0.getcolor(color_code)
+
+                        if spritepriority:
+                            if buffer_attributes[ly, x] & COL0_FLAG:
+                                buffer[ly, x] = pixel
+                        else:
+                            buffer[ly, x] = pixel
+                x += 1
+            x -= 8
+
+    def render_frame(self):
+        pass
+
+
+class FastRenderer(Renderer):
+    def render_frame(self):
+        if self.lcd.disable_renderer:
+            return
+
+        scx = self.lcd.SCX
+        scy = self.lcd.SCY
+        wx = self.lcd.WX
+        wy = self.lcd.WY
+        window_active = self.wy_activated_frame
+        self.ly_window = -1
+
+        for y in range(ROWS):
+            self.lcd.SCX = self.lcd._scanlineparameters[y][0]
+            self.lcd.SCY = self.lcd._scanlineparameters[y][1]
+            self.lcd.WX = self.lcd._scanlineparameters[y][2]
+            self.lcd.WY = self.lcd._scanlineparameters[y][3]
+            self.wy_activated_frame = self.lcd._scanlineparameters[y][4]
+
+            if self.cgb:
+                self.cgb_scanline(y)
+            else:
+                self.scanline(y)
+            self.scanline_sprites(y, self._screenbuffer, self._screenbuffer_attributes, False)
+
+        self.lcd.SCX = scx
+        self.lcd.SCY = scy
+        self.lcd.WX = wx
+        self.lcd.WY = wy
+        self.wy_activated_frame = window_active
 
 class VBKregister:
     def __init__(self, value=0):

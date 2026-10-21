@@ -109,14 +109,10 @@ class Motherboard:
         # Initialize SGB border renderer
         self.sgb_border = sgb_border.SGBBorderRenderer(self.sgb)
 
-        self.lcd = lcd.LCD(
-            self.cgb,
-            self.cgb_mode,
-            color_palette,
-            cgb_color_palette,
-            randomize=randomize,
-            fast_mode=fast_mode,
-        )
+        if fast_mode:
+            self.lcd = lcd.FastLCD(self.cgb, self.cgb_mode, color_palette, cgb_color_palette, randomize=randomize)
+        else:
+            self.lcd = lcd.LCD(self.cgb, self.cgb_mode, color_palette, cgb_color_palette, randomize=randomize)
 
         self.sound = sound.Sound(sound_volume, sound_emulated and not fast_mode, sound_sample_rate, self.cgb)
 
@@ -790,7 +786,8 @@ class Motherboard:
             self.cartridge.setitem(i, value)
             self.cpu.bail = True
         elif 0x8000 <= i < 0xA000:  # 8kB Video RAM
-            if self.in_tick:
+            # Fast mode accepts sub-instruction LCD timing drift on VRAM writes.
+            if self.in_tick and not self.fast_mode:
                 if lcd_interrupt := self.lcd.tick(self.cpu.cycles + self.cpu.memory_access_offset):
                     self.cpu.set_interruptflag(lcd_interrupt)
                 if self.lcd._LCDC.lcd_enable and self.lcd._STAT._mode == 3:
