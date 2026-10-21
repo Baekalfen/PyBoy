@@ -7,6 +7,7 @@ from pyboy.plugins.base_plugin import PyBoyGameWrapper
 
 # imports
 from pyboy.plugins.window_sdl2 import WindowSDL2 # noqa
+from pyboy.plugins.window_metal import WindowMetal # noqa
 from pyboy.plugins.window_open_gl import WindowOpenGL # noqa
 from pyboy.plugins.window_glfw import WindowGLFW # noqa
 from pyboy.plugins.window_null import WindowNull # noqa
@@ -32,6 +33,7 @@ from pyboy.plugins.game_wrapper2048 import GameWrapper2048 # noqa
 def parser_arguments():
     # yield_plugins
     yield WindowSDL2.argv
+    yield WindowMetal.argv
     yield WindowOpenGL.argv
     yield WindowGLFW.argv
     yield WindowNull.argv
@@ -64,6 +66,8 @@ class PluginManager:
         # plugins_enabled
         self.window_sdl2 = WindowSDL2(pyboy, mb, pyboy_argv)
         self.window_sdl2_enabled = self.window_sdl2.enabled()
+        self.window_metal = WindowMetal(pyboy, mb, pyboy_argv)
+        self.window_metal_enabled = self.window_metal.enabled()
         self.window_open_gl = WindowOpenGL(pyboy, mb, pyboy_argv)
         self.window_open_gl_enabled = self.window_open_gl.enabled()
         self.window_glfw = WindowGLFW(pyboy, mb, pyboy_argv)
@@ -122,6 +126,8 @@ class PluginManager:
         # foreach windows events = [].handle_events(events)
         if self.window_sdl2_enabled:
             events = self.window_sdl2.handle_events(events)
+        if self.window_metal_enabled:
+            events = self.window_metal.handle_events(events)
         if self.window_open_gl_enabled:
             events = self.window_open_gl.handle_events(events)
         if self.window_glfw_enabled:
@@ -209,6 +215,8 @@ class PluginManager:
         # foreach windows [].set_title(self.pyboy.window_title)
         if self.window_sdl2_enabled:
             self.window_sdl2.set_title(self.pyboy.window_title)
+        if self.window_metal_enabled:
+            self.window_metal.set_title(self.pyboy.window_title)
         if self.window_open_gl_enabled:
             self.window_open_gl.set_title(self.pyboy.window_title)
         if self.window_glfw_enabled:
@@ -224,6 +232,8 @@ class PluginManager:
         # foreach windows [].post_tick()
         if self.window_sdl2_enabled:
             self.window_sdl2.post_tick()
+        if self.window_metal_enabled:
+            self.window_metal.post_tick()
         if self.window_open_gl_enabled:
             self.window_open_gl.post_tick()
         if self.window_glfw_enabled:
@@ -239,6 +249,8 @@ class PluginManager:
         # foreach windows [].paused(pause)
         if self.window_sdl2_enabled:
             self.window_sdl2.paused(pause)
+        if self.window_metal_enabled:
+            self.window_metal.paused(pause)
         if self.window_open_gl_enabled:
             self.window_open_gl.paused(pause)
         if self.window_glfw_enabled:
@@ -256,6 +268,9 @@ class PluginManager:
         # foreach windows done = [].frame_limiter(speed), if done: return
         if self.window_sdl2_enabled:
             done = self.window_sdl2.frame_limiter(speed)
+            if done: return
+        if self.window_metal_enabled:
+            done = self.window_metal.frame_limiter(speed)
             if done: return
         if self.window_open_gl_enabled:
             done = self.window_open_gl.frame_limiter(speed)
@@ -276,6 +291,8 @@ class PluginManager:
         # foreach windows title += [].window_title()
         if self.window_sdl2_enabled:
             title += self.window_sdl2.window_title()
+        if self.window_metal_enabled:
+            title += self.window_metal.window_title()
         if self.window_open_gl_enabled:
             title += self.window_open_gl.window_title()
         if self.window_glfw_enabled:
@@ -323,6 +340,8 @@ class PluginManager:
         # foreach windows [].stop()
         if self.window_sdl2_enabled:
             self.window_sdl2.stop()
+        if self.window_metal_enabled:
+            self.window_metal.stop()
         if self.window_open_gl_enabled:
             self.window_open_gl.stop()
         if self.window_glfw_enabled:

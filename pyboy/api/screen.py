@@ -32,6 +32,9 @@ class Screen:
 
     def __init__(self, mb):
         self.mb = mb
+        self._torch_renderer = None
+        self._gpu_async_enabled = False
+        self._gpu_render_generation = 0
 
         self.raw_buffer = self.mb.lcd.renderer._screenbuffer
         """
@@ -211,6 +214,102 @@ class Screen:
             return [[line[0], line[1], line[2] - 7, line[3]] for line in self.mb.lcd._scanlineparameters]
         else:
             return [[0, 0, 0, 0] for line in range(144)]
+
+    def gpu_tensor(self, device):
+        """
+        Render a fast-mode frame from VRAM and OAM into a PyTorch tensor on `device`.
+
+        `device` must be an accelerator: `"mps"` or `"cuda"`. The GPU decodes tile
+        data, applies DMG/CGB palettes, renders the window, and composites sprites.
+        VRAM and OAM are synchronized incrementally. The result is a `torch.uint8`
+        tensor with shape `(144, 160, 4)`.
+
+        This fast-mode rendering path uses VRAM, OAM, LCDC, and palette state captured
+        at VBlank, together with captured per-scanline viewport/window parameters. It
+        intentionally does not reproduce mid-frame changes or exact PPU priority
+        timing, and it does not replace `screen.ndarray`.
+
+        The GPU render is submitted at VBlank, and the regular CPU renderer is
+        skipped on subsequent frames, so `screen.ndarray` is not updated while an
+        accelerator is selected. CUDA VRAM/OAM updates are prefetched at the start
+        of the LY 143 HBlank when their generations change. The returned tensor is
+        reused and overwritten by subsequent frames; clone it to retain a frame.
+
+        Install `torch>=2.6` to use this feature.
+
+        Example:
+        ```python
+        >>> pyboy = PyBoy("game.gb", window="null", fast_mode=True) # doctest: +SKIP
+        >>> pyboy.tick(1) # doctest: +SKIP
+        True
+        >>> frame = pyboy.screen.gpu_tensor("mps") # doctest: +SKIP
+        >>> frame.shape # doctest: +SKIP
+        torch.Size([144, 160, 4])
+
+        ```
+        """
+        renderer = self.mb.lcd.renderer
+        get_gpu_render_state = getattr(renderer, "get_gpu_render_state", None)
+        if get_gpu_render_state is None:
+            raise RuntimeError("gpu_tensor() requires PyBoy fast mode")
+
+        error = renderer.take_gpu_render_error()
+        if error is not None:
+            raise error
+
+        # Init torch renderer. The import is deferred, so PyTorch is only loaded
+        # when this feature is used.
+        if self._torch_renderer is None or self._torch_renderer.device_spec != str(device):
+            from pyboy.api.torch_renderer import TorchFrameRenderer
+
+            torch_renderer = TorchFrameRenderer(device)
+            self._disable_gpu_async(renderer)
+            self._torch_renderer = torch_renderer
+
+        if not self.mb.lcd._LCDC.lcd_enable:
+            frame = self._torch_renderer.render(renderer.get_gpu_blank_render_state())
+            if self._gpu_async_enabled:
+                # Align with the renderer's generation, so the frame rendered while
+                # the LCD was off is not mistaken for one dispatched at VBlank.
+                self._gpu_render_generation = renderer.get_gpu_render_generation()
+            return frame
+
+        device_type = self._torch_renderer.device.type
+
+        # Metal
+        if device_type == "mps":
+            renderer.set_gpu_render_enabled(True)
+            if not self._gpu_async_enabled:
+                return self._enable_gpu_async(renderer, get_gpu_render_state)
+            if renderer.get_gpu_render_generation() != self._gpu_render_generation:
+                self._gpu_render_generation = renderer.get_gpu_render_generation()
+                return self._torch_renderer.get_frame()
+            # Nothing was rendered at VBlank since the last call; render now
+            return self._torch_renderer.render(get_gpu_render_state())
+
+        # CUDA
+        if not self._gpu_async_enabled:
+            self._enable_gpu_async(renderer, get_gpu_render_state)
+        return self._torch_renderer.get_frame()
+
+    def _disable_gpu_async(self, renderer):
+        if self._gpu_async_enabled:
+            renderer.set_gpu_frame_renderer(None)
+            self._gpu_async_enabled = False
+
+    def _enable_gpu_async(self, renderer, get_gpu_render_state):
+        frame = self._torch_renderer.render(get_gpu_render_state())
+        renderer.set_gpu_frame_renderer(self._torch_renderer)
+        renderer.set_gpu_render_enabled(True)
+        self._gpu_async_enabled = True
+        self._gpu_render_generation = renderer.get_gpu_render_generation()
+        return frame
+
+    def _present_gpu_frame_metal(self, layer_address):
+        frame = self.gpu_tensor("mps")
+        if self._torch_renderer is None:
+            raise RuntimeError("Metal presentation requires an initialized MPS renderer")
+        self._torch_renderer.present_metal(frame, layer_address)
 
     def get_tilemap_position(self):
         """

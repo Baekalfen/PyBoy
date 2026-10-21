@@ -7,6 +7,7 @@ import cython
 from cython cimport final
 
 from cpython.array cimport array
+from cpython.bytes cimport PyBytes_FromStringAndSize
 from libc.stdint cimport int16_t, int64_t, uint8_t, uint16_t, uint32_t, uint64_t
 from libc.string cimport memcpy
 
@@ -48,6 +49,9 @@ cdef inline uint64_t _sprite_row_opaque_mask(uint64_t sprite_row) noexcept nogil
 
 cdef inline bint _sprite_row_is_fully_opaque(uint64_t opaque_mask) noexcept nogil:
     return opaque_mask == <uint64_t>0x0101010101010101
+
+cdef inline object _bytes_from_array(const uint8_t* data, Py_ssize_t length):
+    return PyBytes_FromStringAndSize(<const char*>data, length)
 
 cdef uint8_t INTR_VBLANK, INTR_LCDC
 cdef uint16_t LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGP, OBP0, OBP1, WY, WX
@@ -92,6 +96,8 @@ cdef class LCD:
     cdef bint disable_renderer
     cdef uint8_t[8 * 1024] VRAM0
     cdef uint8_t[0xA0] OAM
+    cdef bint gpu_memory_tracking_enabled
+    cdef uint64_t gpu_vram0_generation, gpu_vram1_generation, gpu_oam_generation
 
     cdef uint8_t SCY
     cdef uint8_t SCX
@@ -595,6 +601,13 @@ cdef class Renderer:
     )
     cdef int _dot_tiledat_addr(self, int) noexcept nogil
 
+    cdef object _gpu_frame_renderer, _gpu_render_error
+    cdef uint64_t _gpu_render_generation
+    cpdef void set_gpu_frame_renderer(self, object) noexcept
+    cpdef void prefetch_gpu_frame(self) noexcept
+    cpdef void render_gpu_frame(self) noexcept
+    cpdef object take_gpu_render_error(self)
+    cpdef uint64_t get_gpu_render_generation(self) noexcept
     @final
     @cython.locals(tile_index=int)
     cdef void invalidate_tile(self, int, int) noexcept nogil
@@ -764,6 +777,7 @@ cdef class Renderer:
     @cython.locals(colorcode_low=uint64_t, colorcode_high=uint64_t)
     cdef inline uint64_t colorcode(self, uint64_t, uint64_t) noexcept nogil
 
+    cdef bint gpu_render_enabled(self) noexcept nogil
     cdef void render_frame(self) noexcept nogil
 
     @final
@@ -782,6 +796,9 @@ cdef class TilemapView:
     cdef bint cgb, dirty
 
 cdef class FastRenderer(Renderer):
+    cdef bint _gpu_render_enabled
+    cdef object _gpu_vram0_snapshot, _gpu_vram1_snapshot, _gpu_oam_snapshot, _gpu_empty_vram
+    cdef uint64_t _gpu_vram0_generation, _gpu_vram1_generation, _gpu_oam_generation
     cdef TilemapView _background_view, _window_view
     @cython.locals(
         y=int,
@@ -840,7 +857,12 @@ cdef class FastRenderer(Renderer):
         window_line=int,
         background_enabled=bint,
     )
+    cdef bint gpu_render_enabled(self) noexcept nogil
     cdef void render_frame(self) noexcept nogil
+    cpdef object get_background_view_buffer(self)
+    cpdef object get_gpu_blank_render_state(self)
+    cpdef object get_gpu_render_state(self)
+    cpdef void set_gpu_render_enabled(self, bint) noexcept
 
 @final
 cdef class VBKregister:
