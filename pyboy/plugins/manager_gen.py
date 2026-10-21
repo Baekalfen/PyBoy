@@ -15,7 +15,7 @@ sys.path.insert(0, file_path + "/../..")
 
 # Plugins and priority!
 # E.g. DisableInput first
-windows = ["WindowSDL2", "WindowOpenGL", "WindowGLFW", "WindowNull", "Debug"]
+windows = ["WindowSDL2", "WindowMetal", "WindowOpenGL", "WindowGLFW", "WindowNull", "Debug"]
 game_wrappers = [
     "GameWrapperSuperMarioBrosDeluxe",
     "GameWrapperSuperMarioLand",

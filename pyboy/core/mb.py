@@ -181,9 +181,13 @@ class Motherboard:
             if bank == 0:
                 opcode = self.lcd.VRAM0[addr - 0x8000]
                 self.lcd.VRAM0[addr - 0x8000] = OPCODE_BRK
+                if self.lcd.gpu_memory_tracking_enabled and opcode != OPCODE_BRK:
+                    self.lcd.gpu_vram0_generation += 1
             else:
                 opcode = self.lcd.VRAM1[addr - 0x8000]
                 self.lcd.VRAM1[addr - 0x8000] = OPCODE_BRK
+                if self.lcd.gpu_memory_tracking_enabled and opcode != OPCODE_BRK:
+                    self.lcd.gpu_vram1_generation += 1
             if self.fast_mode and addr < 0x9800:
                 self.lcd.renderer.invalidate_tile((addr - 0x8000) // 16, bank)
         elif 0xA000 <= addr < 0xC000:
@@ -224,9 +228,15 @@ class Motherboard:
                 self.cartridge.rombanks[bank, addr - 0x4000] = opcode
             elif 0x8000 <= addr < 0xA000:
                 if bank == 0:
+                    changed = self.lcd.VRAM0[addr - 0x8000] != opcode
                     self.lcd.VRAM0[addr - 0x8000] = opcode
+                    if self.lcd.gpu_memory_tracking_enabled and changed:
+                        self.lcd.gpu_vram0_generation += 1
                 else:
+                    changed = self.lcd.VRAM1[addr - 0x8000] != opcode
                     self.lcd.VRAM1[addr - 0x8000] = opcode
+                    if self.lcd.gpu_memory_tracking_enabled and changed:
+                        self.lcd.gpu_vram1_generation += 1
                 if self.fast_mode and addr < 0x9800:
                     self.lcd.renderer.invalidate_tile((addr - 0x8000) // 16, bank)
             elif 0xA000 <= addr < 0xC000:
@@ -526,7 +536,10 @@ class Motherboard:
                 source -= 0x20
             value = self.getitem((source << 8) | self.oam_dma_index)
             self.oam_dma_reading = False
+            changed = self.lcd.OAM[self.oam_dma_index] != value
             self.lcd.OAM[self.oam_dma_index] = value
+            if self.lcd.gpu_memory_tracking_enabled and changed:
+                self.lcd.gpu_oam_generation += 1
             self.oam_dma_index += 1
 
         if self.oam_dma_index == 0xA0:
@@ -808,13 +821,19 @@ class Motherboard:
                     return
             if not self.cgb or self.lcd.vbk.active_bank == 0:
                 index = i - 0x8000
+                changed = self.lcd.VRAM0[index] != value
                 self.lcd.VRAM0[index] = value
+                if self.lcd.gpu_memory_tracking_enabled and changed:
+                    self.lcd.gpu_vram0_generation += 1
                 if i < 0x9800:  # Is within tile data -- not tile maps
                     # Mask out the byte of the tile
                     self.lcd.renderer.invalidate_tile(((i & 0xFFF0) - 0x8000) // 16, 0)
             else:
                 index = i - 0x8000
+                changed = self.lcd.VRAM1[index] != value
                 self.lcd.VRAM1[index] = value
+                if self.lcd.gpu_memory_tracking_enabled and changed:
+                    self.lcd.gpu_vram1_generation += 1
                 if i < 0x9800:  # Is within tile data -- not tile maps
                     # Mask out the byte of the tile
                     self.lcd.renderer.invalidate_tile(((i & 0xFFF0) - 0x8000) // 16, 1)
@@ -854,7 +873,10 @@ class Motherboard:
                 self.sync_oam_dma(self.cpu.memory_access_offset)
             if not self.oam_dma_active:
                 index = i - 0xFE00
+                changed = self.lcd.OAM[index] != value
                 self.lcd.OAM[index] = value
+                if self.lcd.gpu_memory_tracking_enabled and changed:
+                    self.lcd.gpu_oam_generation += 1
         elif 0xFEA0 <= i < 0xFF00:  # Empty but unusable for I/O
             if not self.cgb:
                 self.ram.non_io_internal_ram0[i - 0xFEA0] = value
@@ -1134,7 +1156,13 @@ class Motherboard:
         else:
             return False
 
+        changed = False
         if not self.cgb or self.lcd.vbk.active_bank == 0:
+            if self.lcd.gpu_memory_tracking_enabled:
+                for i in range(0x10):
+                    if self.lcd.VRAM0[dst - 0x8000 + i] != self.cartridge.rombanks[rom_bank, source_offset + i]:
+                        changed = True
+                        break
             if cython.compiled:
                 _copy_memory(
                     cython.address(self.lcd.VRAM0[dst - 0x8000]),
@@ -1146,6 +1174,11 @@ class Motherboard:
                     self.lcd.VRAM0[dst - 0x8000 + i] = self.cartridge.rombanks[rom_bank, source_offset + i]
             vram_bank = 0
         else:
+            if self.lcd.gpu_memory_tracking_enabled:
+                for i in range(0x10):
+                    if self.lcd.VRAM1[dst - 0x8000 + i] != self.cartridge.rombanks[rom_bank, source_offset + i]:
+                        changed = True
+                        break
             if cython.compiled:
                 _copy_memory(
                     cython.address(self.lcd.VRAM1[dst - 0x8000]),
@@ -1159,6 +1192,11 @@ class Motherboard:
 
         if dst < 0x9800:
             self.lcd.renderer.invalidate_tile((dst - 0x8000) // 16, vram_bank)
+        if self.lcd.gpu_memory_tracking_enabled and changed:
+            if vram_bank == 0:
+                self.lcd.gpu_vram0_generation += 1
+            else:
+                self.lcd.gpu_vram1_generation += 1
         return True
 
     def transfer_DMA(self, src):
@@ -1185,7 +1223,13 @@ class Motherboard:
             offset = source << 8
 
             copied = False
+            changed = False
             if not self.bootrom_enabled and offset < 0x4000 and offset + 0xA0 <= 0x4000:
+                if self.lcd.gpu_memory_tracking_enabled:
+                    for n in range(0xA0):
+                        if self.lcd.OAM[n] != self.cartridge.rombanks[self.cartridge.rombank_selected_low, offset + n]:
+                            changed = True
+                            break
                 if cython.compiled:
                     _copy_memory(
                         cython.address(self.lcd.OAM[0]),
@@ -1197,6 +1241,14 @@ class Motherboard:
                         self.lcd.OAM[n] = self.cartridge.rombanks[self.cartridge.rombank_selected_low, offset + n]
                 copied = True
             elif not self.bootrom_enabled and 0x4000 <= offset and offset + 0xA0 <= 0x8000:
+                if self.lcd.gpu_memory_tracking_enabled:
+                    for n in range(0xA0):
+                        if (
+                            self.lcd.OAM[n]
+                            != self.cartridge.rombanks[self.cartridge.rombank_selected, offset - 0x4000 + n]
+                        ):
+                            changed = True
+                            break
                 if cython.compiled:
                     _copy_memory(
                         cython.address(self.lcd.OAM[0]),
@@ -1212,9 +1264,13 @@ class Motherboard:
                 self.oam_dma_reading = True
                 for n in range(0xA0):
                     value = self.getitem(offset + n)
+                    if self.lcd.gpu_memory_tracking_enabled and self.lcd.OAM[n] != value:
+                        changed = True
                     self.lcd.OAM[n] = value
                 self.oam_dma_reading = False
 
+            if self.lcd.gpu_memory_tracking_enabled and changed:
+                self.lcd.gpu_oam_generation += 1
             self.oam_dma_active = False
             self.oam_dma_index = 0xA0
 

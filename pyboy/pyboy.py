@@ -145,8 +145,8 @@ class PyBoy:
                 path-based ROM, PyBoy looks for `<gamerom>.ram`; pass a destination to `stop` to save to a stream.
             rtc_file (binary file-like object or None): Existing cartridge RTC data to load. When omitted for a
                 path-based ROM, PyBoy looks for `<gamerom>.rtc`; pass a destination to `stop` to save to a stream.
-            window (str): Window backend: "SDL2", "OpenGL", "GLFW", or "null". "headless" and "dummy" are aliases
-                for "null".
+            window (str): Window backend: "SDL2", "Metal", "OpenGL", "GLFW", or "null". Metal requires macOS,
+                fast mode, and PyTorch MPS. "headless" and "dummy" are aliases for "null".
             scale (int): Window scale factor; it does not affect API image dimensions.
             symbols (str or os.PathLike or None): Path to a `.sym` or `.map` symbol file.
             bootrom (str or os.PathLike or None): Path to a boot ROM to use instead of the built-in boot ROM.
@@ -200,8 +200,8 @@ class PyBoy:
             )
             window = kwargs.pop("window_type")
 
-        if window not in ["SDL2", "OpenGL", "GLFW", "null", "headless", "dummy"]:
-            raise KeyError(f'Unknown window type: {window}. Use "SDL2", "OpenGL", "GLFW", or "null"')
+        if window not in ["SDL2", "Metal", "OpenGL", "GLFW", "null", "headless", "dummy"]:
+            raise KeyError(f'Unknown window type: {window}. Use "SDL2", "Metal", "OpenGL", "GLFW", or "null"')
 
         kwargs["window"] = window
         kwargs["scale"] = scale
@@ -712,6 +712,8 @@ class PyBoy:
                 count -= 1
         t_tick = time.perf_counter_ns()
         self._post_tick()
+        if self._plugin_manager.window_metal_enabled:
+            self._plugin_manager.window_metal.raise_pending_error()
         t_post = time.perf_counter_ns()
 
         if _count > 0:
@@ -2165,6 +2167,7 @@ class PyBoyMemoryView:
                     raise PyBoyOutOfBoundsException("VRAM Bank out of range")
 
                 if bank == 0:
+                    changed = False
                     if not is_single:
                         # Writing slice of memory space
                         if hasattr(v, "__iter__"):
@@ -2172,19 +2175,28 @@ class PyBoyMemoryView:
                                 raise PyBoyInvalidInputException("slice does not match length of data")
                             _v = iter(v)
                             for x in range(start, stop, step):
-                                self.mb.lcd.VRAM0[x] = next(_v)
+                                value = next(_v)
+                                if self.mb.lcd.VRAM0[x] != value:
+                                    changed = True
+                                self.mb.lcd.VRAM0[x] = value
                                 if self.mb.fast_mode and x < 0x1800:
                                     self.mb.lcd.renderer.invalidate_tile(x // 16, 0)
                         else:
                             for x in range(start, stop, step):
+                                if self.mb.lcd.VRAM0[x] != v:
+                                    changed = True
                                 self.mb.lcd.VRAM0[x] = v
                                 if self.mb.fast_mode and x < 0x1800:
                                     self.mb.lcd.renderer.invalidate_tile(x // 16, 0)
                     else:
+                        changed = self.mb.lcd.VRAM0[start] != v
                         self.mb.lcd.VRAM0[start] = v
                         if self.mb.fast_mode and start < 0x1800:
                             self.mb.lcd.renderer.invalidate_tile(start // 16, 0)
+                    if changed:
+                        self.mb.lcd.mark_vram_dirty(0)
                 else:
+                    changed = False
                     if not is_single:
                         # Writing slice of memory space
                         if hasattr(v, "__iter__"):
@@ -2192,18 +2204,26 @@ class PyBoyMemoryView:
                                 raise PyBoyInvalidInputException("slice does not match length of data")
                             _v = iter(v)
                             for x in range(start, stop, step):
-                                self.mb.lcd.VRAM1[x] = next(_v)
+                                value = next(_v)
+                                if self.mb.lcd.VRAM1[x] != value:
+                                    changed = True
+                                self.mb.lcd.VRAM1[x] = value
                                 if self.mb.fast_mode and x < 0x1800:
                                     self.mb.lcd.renderer.invalidate_tile(x // 16, 1)
                         else:
                             for x in range(start, stop, step):
+                                if self.mb.lcd.VRAM1[x] != v:
+                                    changed = True
                                 self.mb.lcd.VRAM1[x] = v
                                 if self.mb.fast_mode and x < 0x1800:
                                     self.mb.lcd.renderer.invalidate_tile(x // 16, 1)
                     else:
+                        changed = self.mb.lcd.VRAM1[start] != v
                         self.mb.lcd.VRAM1[start] = v
                         if self.mb.fast_mode and start < 0x1800:
                             self.mb.lcd.renderer.invalidate_tile(start // 16, 1)
+                    if changed:
+                        self.mb.lcd.mark_vram_dirty(1)
             elif start < 0xC000:
                 start -= 0xA000
                 stop -= 0xA000

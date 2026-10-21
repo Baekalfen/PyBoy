@@ -127,7 +127,8 @@ class build_ext(_build_ext):
 
 
 def prep_pxd_py_files():
-    ignore_py_files = ["__main__.py", "manager_gen.py", "opcodes_gen.py", "conftest.py"]
+    # Triton JIT inspects Python function source and cannot compile Cython functions.
+    ignore_py_files = ["__main__.py", "manager_gen.py", "opcodes_gen.py", "conftest.py", "torch_cuda.py"]
     # Cython doesn't trigger a recompile on .py files, where only the .pxd file has changed. So we fix this here.
     # We also yield the py_files that have a .pxd file, as we feed these into the cythonize call.
     for root, dirs, files in os.walk(ROOT_DIR):

@@ -6,32 +6,34 @@
 from pyboy.plugins.base_plugin import PyBoyGameWrapper
 
 # imports
-from pyboy.plugins.window_sdl2 import WindowSDL2 # noqa
-from pyboy.plugins.window_open_gl import WindowOpenGL # noqa
-from pyboy.plugins.window_glfw import WindowGLFW # noqa
-from pyboy.plugins.window_null import WindowNull # noqa
-from pyboy.plugins.debug import Debug # noqa
-from pyboy.plugins.auto_pause import AutoPause # noqa
-from pyboy.plugins.record_replay import RecordReplay # noqa
-from pyboy.plugins.rewind import Rewind # noqa
-from pyboy.plugins.screen_recorder import ScreenRecorder # noqa
-from pyboy.plugins.screenshot_recorder import ScreenshotRecorder # noqa
-from pyboy.plugins.game_boy_printer import GameBoyPrinter # noqa
-from pyboy.plugins.debug_prompt import DebugPrompt # noqa
-from pyboy.plugins.game_wrapper_super_mario_bros_deluxe import GameWrapperSuperMarioBrosDeluxe # noqa
-from pyboy.plugins.game_wrapper_super_mario_land import GameWrapperSuperMarioLand # noqa
-from pyboy.plugins.game_wrapper_tetris import GameWrapperTetris # noqa
-from pyboy.plugins.game_wrapper_pandoras_blocks import GameWrapperPandorasBlocks # noqa
-from pyboy.plugins.game_wrapper_kirby_dream_land import GameWrapperKirbyDreamLand # noqa
-from pyboy.plugins.game_wrapper_pokemon_gen1 import GameWrapperPokemonGen1 # noqa
-from pyboy.plugins.game_wrapper_pokemon_pinball import GameWrapperPokemonPinball # noqa
-from pyboy.plugins.game_wrapper2048 import GameWrapper2048 # noqa
+from pyboy.plugins.window_sdl2 import WindowSDL2  # noqa
+from pyboy.plugins.window_metal import WindowMetal  # noqa
+from pyboy.plugins.window_open_gl import WindowOpenGL  # noqa
+from pyboy.plugins.window_glfw import WindowGLFW  # noqa
+from pyboy.plugins.window_null import WindowNull  # noqa
+from pyboy.plugins.debug import Debug  # noqa
+from pyboy.plugins.auto_pause import AutoPause  # noqa
+from pyboy.plugins.record_replay import RecordReplay  # noqa
+from pyboy.plugins.rewind import Rewind  # noqa
+from pyboy.plugins.screen_recorder import ScreenRecorder  # noqa
+from pyboy.plugins.screenshot_recorder import ScreenshotRecorder  # noqa
+from pyboy.plugins.game_boy_printer import GameBoyPrinter  # noqa
+from pyboy.plugins.debug_prompt import DebugPrompt  # noqa
+from pyboy.plugins.game_wrapper_super_mario_bros_deluxe import GameWrapperSuperMarioBrosDeluxe  # noqa
+from pyboy.plugins.game_wrapper_super_mario_land import GameWrapperSuperMarioLand  # noqa
+from pyboy.plugins.game_wrapper_tetris import GameWrapperTetris  # noqa
+from pyboy.plugins.game_wrapper_pandoras_blocks import GameWrapperPandorasBlocks  # noqa
+from pyboy.plugins.game_wrapper_kirby_dream_land import GameWrapperKirbyDreamLand  # noqa
+from pyboy.plugins.game_wrapper_pokemon_gen1 import GameWrapperPokemonGen1  # noqa
+from pyboy.plugins.game_wrapper_pokemon_pinball import GameWrapperPokemonPinball  # noqa
+from pyboy.plugins.game_wrapper2048 import GameWrapper2048  # noqa
 # imports end
 
 
 def parser_arguments():
     # yield_plugins
     yield WindowSDL2.argv
+    yield WindowMetal.argv
     yield WindowOpenGL.argv
     yield WindowGLFW.argv
     yield WindowNull.argv
@@ -64,6 +66,8 @@ class PluginManager:
         # plugins_enabled
         self.window_sdl2 = WindowSDL2(pyboy, mb, pyboy_argv)
         self.window_sdl2_enabled = self.window_sdl2.enabled()
+        self.window_metal = WindowMetal(pyboy, mb, pyboy_argv)
+        self.window_metal_enabled = self.window_metal.enabled()
         self.window_open_gl = WindowOpenGL(pyboy, mb, pyboy_argv)
         self.window_open_gl_enabled = self.window_open_gl.enabled()
         self.window_glfw = WindowGLFW(pyboy, mb, pyboy_argv)
@@ -106,14 +110,22 @@ class PluginManager:
 
     def gamewrapper(self):
         # gamewrapper
-        if self.game_wrapper_super_mario_bros_deluxe_enabled: return self.game_wrapper_super_mario_bros_deluxe
-        if self.game_wrapper_super_mario_land_enabled: return self.game_wrapper_super_mario_land
-        if self.game_wrapper_tetris_enabled: return self.game_wrapper_tetris
-        if self.game_wrapper_pandoras_blocks_enabled: return self.game_wrapper_pandoras_blocks
-        if self.game_wrapper_kirby_dream_land_enabled: return self.game_wrapper_kirby_dream_land
-        if self.game_wrapper_pokemon_gen1_enabled: return self.game_wrapper_pokemon_gen1
-        if self.game_wrapper_pokemon_pinball_enabled: return self.game_wrapper_pokemon_pinball
-        if self.game_wrapper2048_enabled: return self.game_wrapper2048
+        if self.game_wrapper_super_mario_bros_deluxe_enabled:
+            return self.game_wrapper_super_mario_bros_deluxe
+        if self.game_wrapper_super_mario_land_enabled:
+            return self.game_wrapper_super_mario_land
+        if self.game_wrapper_tetris_enabled:
+            return self.game_wrapper_tetris
+        if self.game_wrapper_pandoras_blocks_enabled:
+            return self.game_wrapper_pandoras_blocks
+        if self.game_wrapper_kirby_dream_land_enabled:
+            return self.game_wrapper_kirby_dream_land
+        if self.game_wrapper_pokemon_gen1_enabled:
+            return self.game_wrapper_pokemon_gen1
+        if self.game_wrapper_pokemon_pinball_enabled:
+            return self.game_wrapper_pokemon_pinball
+        if self.game_wrapper2048_enabled:
+            return self.game_wrapper2048
         # gamewrapper end
         self.generic_game_wrapper_enabled = True
         return self.generic_game_wrapper
@@ -122,6 +134,8 @@ class PluginManager:
         # foreach windows events = [].handle_events(events)
         if self.window_sdl2_enabled:
             events = self.window_sdl2.handle_events(events)
+        if self.window_metal_enabled:
+            events = self.window_metal.handle_events(events)
         if self.window_open_gl_enabled:
             events = self.window_open_gl.handle_events(events)
         if self.window_glfw_enabled:
@@ -209,6 +223,8 @@ class PluginManager:
         # foreach windows [].set_title(self.pyboy.window_title)
         if self.window_sdl2_enabled:
             self.window_sdl2.set_title(self.pyboy.window_title)
+        if self.window_metal_enabled:
+            self.window_metal.set_title(self.pyboy.window_title)
         if self.window_open_gl_enabled:
             self.window_open_gl.set_title(self.pyboy.window_title)
         if self.window_glfw_enabled:
@@ -224,6 +240,8 @@ class PluginManager:
         # foreach windows [].post_tick()
         if self.window_sdl2_enabled:
             self.window_sdl2.post_tick()
+        if self.window_metal_enabled:
+            self.window_metal.post_tick()
         if self.window_open_gl_enabled:
             self.window_open_gl.post_tick()
         if self.window_glfw_enabled:
@@ -239,6 +257,8 @@ class PluginManager:
         # foreach windows [].paused(pause)
         if self.window_sdl2_enabled:
             self.window_sdl2.paused(pause)
+        if self.window_metal_enabled:
+            self.window_metal.paused(pause)
         if self.window_open_gl_enabled:
             self.window_open_gl.paused(pause)
         if self.window_glfw_enabled:
@@ -256,19 +276,28 @@ class PluginManager:
         # foreach windows done = [].frame_limiter(speed), if done: return
         if self.window_sdl2_enabled:
             done = self.window_sdl2.frame_limiter(speed)
-            if done: return
+            if done:
+                return
+        if self.window_metal_enabled:
+            done = self.window_metal.frame_limiter(speed)
+            if done:
+                return
         if self.window_open_gl_enabled:
             done = self.window_open_gl.frame_limiter(speed)
-            if done: return
+            if done:
+                return
         if self.window_glfw_enabled:
             done = self.window_glfw.frame_limiter(speed)
-            if done: return
+            if done:
+                return
         if self.window_null_enabled:
             done = self.window_null.frame_limiter(speed)
-            if done: return
+            if done:
+                return
         if self.debug_enabled:
             done = self.debug.frame_limiter(speed)
-            if done: return
+            if done:
+                return
         # foreach end
 
     def window_title(self):
@@ -276,6 +305,8 @@ class PluginManager:
         # foreach windows title += [].window_title()
         if self.window_sdl2_enabled:
             title += self.window_sdl2.window_title()
+        if self.window_metal_enabled:
+            title += self.window_metal.window_title()
         if self.window_open_gl_enabled:
             title += self.window_open_gl.window_title()
         if self.window_glfw_enabled:
@@ -323,6 +354,8 @@ class PluginManager:
         # foreach windows [].stop()
         if self.window_sdl2_enabled:
             self.window_sdl2.stop()
+        if self.window_metal_enabled:
+            self.window_metal.stop()
         if self.window_open_gl_enabled:
             self.window_open_gl.stop()
         if self.window_glfw_enabled:

@@ -101,7 +101,7 @@ parser.add_argument(
     "--window",
     default=defaults["window"],
     type=str,
-    choices=["SDL2", "OpenGL", "GLFW", "null"],
+    choices=["SDL2", "Metal", "OpenGL", "GLFW", "null"],
     help="Specify window-type to use",
 )
 parser.add_argument("-s", "--scale", default=defaults["scale"], type=int, help="The scaling multiplier for the window")
@@ -125,7 +125,7 @@ parser.add_argument(
     "--fast-mode",
     dest="fast_mode",
     action="store_true",
-    help="Use faster, less accurate emulation without sound or serial; simplify LCD timing and rendering",
+    help="Use faster, less accurate emulation without sound or serial; simplify LCD timing, rendering, and VRAM access",
 )
 
 # NOTE: Inverted logic on variable
