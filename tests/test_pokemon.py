@@ -15,6 +15,11 @@ from pyboy.plugins.game_wrapper_pokemon_gen1_constants import (
     EVENT_FLAGS_ADDRESS,
     MAX_MONEY,
     OBTAINED_BADGES_ADDRESS,
+    PARTY_MON_HP_OFFSET,
+    PARTY_MON_SIZE,
+    PARTY_MONS_ADDRESS,
+    PARTY_SPECIES_ADDRESS,
+    PARTY_SPECIES_SENTINEL,
     PLAYER_MONEY_ADDRESS,
     POKEMON_TEXT_ENCODING,
 )
@@ -25,11 +30,6 @@ CURRENT_MAP_ADDRESS = 0xD35E
 WARP_DESTINATION_MAP_ADDRESS = 0xFF8B
 STATUS_FLAGS3_ADDRESS = 0xD72D
 STATUS_FLAGS3_WARP_FROM_CURRENT_SCRIPT = 1 << 3
-PARTY_SPECIES_ADDRESS = 0xD164
-PARTY_MON_ADDRESS = 0xD16B
-PARTY_MON_SIZE = 0x2C
-PARTY_MON_HP_OFFSET = 1
-PARTY_SPECIES_SENTINEL = 0xFF
 
 
 def check_image(image, path):
@@ -190,7 +190,7 @@ def test_pokemon_party_controls(pokemon_blue_rom):
     assert wrapper.party[2]["moves"] == (0, 0, 0, 0)
     assert wrapper.party[2]["pp"] == (0, 0, 0, 0)
     assert wrapper.party[1]["nickname"] == tuple(0x80 + ord(character) - ord("A") for character in "SQUIRTLE")
-    third_mon = PARTY_MON_ADDRESS + 2 * PARTY_MON_SIZE
+    third_mon = PARTY_MONS_ADDRESS + 2 * PARTY_MON_SIZE
     assert pyboy.memory[third_mon + PARTY_MON_HP_OFFSET] == 0
     assert pyboy.memory[third_mon + PARTY_MON_HP_OFFSET + 1] == 90
     assert wrapper.party[0]["nickname"]
