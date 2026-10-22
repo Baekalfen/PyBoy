@@ -59,7 +59,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: .pgo/cache/clang
-        key: pgo-v1-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-clang-${{ steps.pgo-clang.outputs.version }}-${{ hashFiles('pyboy/**/*.py', 'pyboy/**/*.pyx', 'pyboy/**/*.pxd', 'setup.py', 'pyproject.toml', 'Makefile', 'requirements.txt', 'requirements_tests.txt', 'tests/conftest.py', 'tests/test_benchmark.py', 'tests/ROMs/**/*', 'ROMs/**/*.gb', 'tools/benchmark_tas.py', '.github/workflows/pr-test.yml') }}
+        key: pgo-v2-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-clang-${{ steps.pgo-clang.outputs.version }}-${{ hashFiles('pyboy/**/*.py', 'pyboy/**/*.pyx', 'pyboy/**/*.pxd', 'setup.py', 'pyproject.toml', 'Makefile', 'requirements.txt', 'requirements_tests.txt', 'tests/conftest.py', 'tests/test_pokemon_tas.py', '.github/workflows/pr-test.yml') }}
     - name: Setup macOS
       if: ${{ contains(matrix.os, 'macos-latest') }}
       run: |
@@ -67,6 +67,8 @@ jobs:
         brew install coreutils ffmpeg
     - name: Build or reuse Clang PGO profile
       if: ${{ github.event_name == 'release' && github.event.action == 'published' && !github.event.release.prerelease && contains(matrix.os, 'macos-latest') }}
+      env:
+        PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
       run: |
         make pgo PGO_ENGINE=clang PGO_PROFILE=.pgo/cache/clang/pyboy.profdata PGO_REUSE_PROFILE=1
     - name: Setup Windows - ffmpeg
@@ -232,12 +234,14 @@ jobs:
       uses: actions/cache@v4
       with:
         path: .pgo/cache/gcc
-        key: pgo-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.manylinux-version }}-${{ matrix.python-version }}-gcc-${{ steps.pgo-gcc.outputs.version }}-${{ hashFiles('pyboy/**/*.py', 'pyboy/**/*.pyx', 'pyboy/**/*.pxd', 'setup.py', 'pyproject.toml', 'Makefile', 'requirements.txt', 'requirements_tests.txt', 'tests/conftest.py', 'tests/test_benchmark.py', 'tests/ROMs/**/*', 'ROMs/**/*.gb', 'tools/benchmark_tas.py', '.github/workflows/pr-test.yml') }}
+        key: pgo-v2-${{ runner.os }}-${{ runner.arch }}-${{ matrix.manylinux-version }}-${{ matrix.python-version }}-gcc-${{ steps.pgo-gcc.outputs.version }}-${{ hashFiles('pyboy/**/*.py', 'pyboy/**/*.pyx', 'pyboy/**/*.pxd', 'setup.py', 'pyproject.toml', 'Makefile', 'requirements.txt', 'requirements_tests.txt', 'tests/conftest.py', 'tests/test_pokemon_tas.py', '.github/workflows/pr-test.yml') }}
     - name: Docker Run Action
       uses: addnab/docker-run-action@v3
+      env:
+        PYTEST_SECRETS_KEY: ${{ secrets.PYTEST_SECRETS_KEY }}
       with:
         image: pyboy-builder:${{ matrix.manylinux-version }}
-        options: -v ${{ github.workspace }}:/work -v ${{ github.workspace }}/.ccache:/ccache -v ${{ github.workspace }}/.pip-cache:/pip-cache -e GITHUB_REF=${{ github.ref }} -e GITHUB_ACTIONS=true --rm
+        options: -v ${{ github.workspace }}:/work -v ${{ github.workspace }}/.ccache:/ccache -v ${{ github.workspace }}/.pip-cache:/pip-cache -e GITHUB_REF=${{ github.ref }} -e GITHUB_ACTIONS=true -e PYTEST_SECRETS_KEY --rm
         run: |
           set -e
 

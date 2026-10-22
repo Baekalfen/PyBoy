@@ -24,11 +24,6 @@ PGO_HOST_OS := $(shell uname -s)
 PGO_ENGINE ?= $(if $(filter Darwin,$(PGO_HOST_OS)),clang,$(if $(filter Linux,$(PGO_HOST_OS)),gcc,unsupported))
 PGO_BASE_CFLAGS ?= $(CFLAGS)
 PGO_BASE_LDFLAGS ?= $(LDFLAGS)
-PGO_BENCHMARKS ?= test_threads_baseline or test_threads_nogil
-PGO_TAS_REPLAYS ?=
-PGO_TAS_RUNS ?= 1
-PGO_TAS_ITERATIONS ?= 1
-PGO_TAS_ARGS ?=
 
 ifeq ($(PGO_ENGINE),clang)
 PGO_CC ?= clang
@@ -140,33 +135,13 @@ pgo:
 	if [ "$$profile_ready" = 1 ]; then \
 		echo "Reusing cached $(PGO_ENGINE) PGO profile"; \
 	else \
-		if [ -z '$(strip $(PGO_BENCHMARKS))' ] && [ -z '$(strip $(PGO_TAS_REPLAYS))' ]; then \
-			echo "No PGO training workloads selected; set PGO_BENCHMARKS or PGO_TAS_REPLAYS." >&2; exit 2; \
-		fi; \
-		if [ -n '$(strip $(PGO_TAS_REPLAYS))' ]; then \
-			for replay in $(PGO_TAS_REPLAYS); do \
-				if [ ! -f "$$replay" ]; then echo "TAS replay not found: $$replay" >&2; exit 2; fi; \
-				if [ ! -f "$${replay%.replay}" ]; then echo "TAS replay has no adjacent ROM: $$replay" >&2; exit 2; fi; \
-			done; \
-		fi; \
 		mkdir -p "$$pgo_run/$(PGO_PROFILE_SUBDIR)" "$(dir $(PGO_PROFILE))"; \
 		if [ "$(PGO_ENGINE)" = gcc ]; then mkdir -p "$$pgo_profile"; fi; \
 		echo "Training $(PGO_ENGINE) PGO profile in $$pgo_run"; \
 		$(MAKE) clean; \
 		$(MAKE) CC="$(PGO_CC)" CFLAGS="$(PGO_BASE_CFLAGS) $$generate_flags" LDFLAGS="$(PGO_BASE_LDFLAGS) $$generate_flags" build_pyboy; \
-		if [ -n '$(strip $(PGO_BENCHMARKS))' ]; then \
-			TEST_NO_UI=1 TEST_VERBOSE_IMAGES=0 LLVM_PROFILE_FILE="$$pgo_run/raw/%m-%p.profraw" \
-				$(PY) -m pytest -q --benchmark-disable -m benchmark tests/test_benchmark.py -k '$(PGO_BENCHMARKS)'; \
-		else \
-			echo "Skipping pytest PGO workloads because PGO_BENCHMARKS is empty."; \
-		fi; \
-		if [ -n '$(strip $(PGO_TAS_REPLAYS))' ]; then \
-			LLVM_PROFILE_FILE="$$pgo_run/raw/%m-%p.profraw" \
-				$(PY) -m tools.benchmark_tas $(foreach replay,$(PGO_TAS_REPLAYS),--replay "$(replay)") \
-					--runs "$(PGO_TAS_RUNS)" --iterations "$(PGO_TAS_ITERATIONS)" $(PGO_TAS_ARGS); \
-		else \
-			echo "Skipping TAS training; set PGO_TAS_REPLAYS to explicit, non-serial replay files to include TAS workloads."; \
-		fi; \
+		PYBOY_PGO_TRAINING=1 TEST_NO_UI=1 TEST_VERBOSE_IMAGES=0 LLVM_PROFILE_FILE="$$pgo_run/raw/%m-%p.profraw" \
+			$(PY) -m pytest -q --benchmark-disable -m benchmark tests/test_pokemon_tas.py -k test_pgo_pokemon_tas; \
 	fi; \
 	if [ "$(PGO_ENGINE)" = clang ]; then \
 		if [ "$$profile_ready" = 0 ]; then \

@@ -93,7 +93,8 @@ def download_file(path, license_url, file_url):
     # is printed on the first download only.
     with FileLock(path.with_suffix(".lock")):
         if not os.path.isfile(path):
-            print(url_open(license_url))
+            if license_url is not None:
+                print(url_open(license_url))
             data = url_open(file_url)
             path.parent.mkdir(parents=True, exist_ok=True)
             with open(path, "wb") as rom_file:
@@ -208,6 +209,20 @@ def pokemon_pinball_rom(secrets):
 @pytest.fixture(scope="session")
 def pokemon_blue_rom(secrets):
     return locate_sha256(b"2a951313c2640e8c2cb21f25d1db019ae6245d9c7121f754fa61afd7bee6452d")
+
+
+@pytest.fixture(scope="session")
+def pgo_pokemon_blue_trace():
+    path = extra_test_rom_dir / Path("pgo_tas/pokemon-blue.semantic.jsonl")
+    download_file(path, None, "https://pyboy.dk/mirror/tas/pokemon-blue.semantic.jsonl")
+    return str(path)
+
+
+@pytest.fixture(scope="session")
+def pokemon_blue_symbols():
+    path = extra_test_rom_dir / Path("pokered/pokeblue.sym")
+    download_file(path, None, "https://pyboy.dk/mirror/pokered/pokeblue.sym")
+    return str(path)
 
 
 @pytest.fixture(scope="session")
