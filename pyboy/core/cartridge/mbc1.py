@@ -45,8 +45,11 @@ class MBC1(BaseMBC):
         if self.memorymodel == 1:
             bank_shift = 4 if self.multicart else 5
             self.rombank_selected_low = (self.bank_select_register2 << bank_shift) % self.external_rom_count
+            if self.external_ram_count:
+                self.rambank_selected = self.bank_select_register2 % self.external_ram_count
         else:
             self.rombank_selected_low = 0
+            self.rambank_selected = 0
         if self.multicart:
             self.rombank_selected = (self.bank_select_register2 << 4) | (self.bank_select_register1 & 0x0F)
             if self.bank_select_register1 & 0x0F == 0 and not self.bank_select_register1 & 0x10:
@@ -88,4 +91,7 @@ class MBC1(BaseMBC):
         else:
             self.bank_select_register1 = self.rombank_selected & 0b00011111
             self.bank_select_register2 = (self.rombank_selected & 0b01100000) >> 5
-            self.rambank_selected = self.bank_select_register2
+        if self.memorymodel == 1 and self.external_ram_count:
+            self.rambank_selected = self.bank_select_register2 % self.external_ram_count
+        else:
+            self.rambank_selected = 0

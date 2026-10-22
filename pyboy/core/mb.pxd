@@ -4,6 +4,7 @@
 #
 
 from libc.stdint cimport int64_t, uint8_t, uint16_t, uint32_t, uint64_t
+from libc.string cimport memcpy
 
 import cython
 from cython cimport final
@@ -24,6 +25,9 @@ from pyboy.utils cimport IntIOInterface, WindowEvent
 
 
 cdef Logger logger
+
+cdef inline void _copy_memory(uint8_t* destination, uint8_t* source, int size) noexcept nogil:
+    memcpy(destination, source, size)
 
 cdef int64_t MAX_CYCLES
 cdef uint16_t STAT, LY, LYC
@@ -47,6 +51,7 @@ cdef class Motherboard:
     cdef bint sgb_capable
     cdef bint sgb_active_transfer
     cdef bint sgb_multiplayer
+    cdef bint fast_mode
     cdef bint bootrom_enabled
     cdef char[1024] serialbuffer
     cdef uint16_t serialbuffer_count
@@ -84,14 +89,14 @@ cdef class Motherboard:
 
     cdef void switch_speed(self) noexcept nogil
 
-    @cython.locals(bank_offset=cython.int, bank=cython.int, memory_access_offset=cython.int, dma_started=cython.bint)
+    @cython.locals(bank_offset=uint16_t, bank=uint8_t, memory_access_offset=cython.int, dma_started=cython.bint)
     cdef uint8_t getitem(self, uint16_t) noexcept nogil
-    @cython.locals(elapsed=int64_t, target=cython.int, value=uint8_t)
+    @cython.locals(elapsed=int64_t, target=cython.int, value=uint8_t, changed=cython.bint)
     cdef void sync_oam_dma(self, uint8_t) noexcept nogil
     @cython.locals(elapsed=int64_t)
     cdef int oam_dma_bus_conflict(self, uint16_t, uint8_t) noexcept nogil
     @final
-    @cython.locals(bank_offset=cython.int, bank=cython.int)
+    @cython.locals(bank_offset=uint16_t, bank=uint8_t, index=cython.int, changed=cython.bint)
     cdef void setitem(self, uint16_t, uint8_t) noexcept nogil
     cdef uint8_t getitem_io_ports(self, uint16_t) noexcept nogil
     @cython.locals(p14=uint8_t, p15=uint8_t, old_p15=uint8_t,
@@ -99,8 +104,11 @@ cdef class Motherboard:
                    cycles_to_div_edge=cython.int)
     cdef void setitem_io_ports(self, uint16_t, uint8_t) noexcept nogil
 
-    @cython.locals(offset=cython.int, dst=cython.int, n=cython.int)
+    @cython.locals(offset=cython.int, dst=cython.int, n=cython.int, source=uint8_t,
+                   value=uint8_t, copied=cython.bint, changed=cython.bint)
     cdef void transfer_DMA(self, uint8_t) noexcept nogil
+    @cython.locals(rom_bank=uint16_t, source_offset=uint16_t, vram_bank=uint8_t, changed=cython.bint)
+    cdef bint copy_hdma_rom_block(self, uint16_t, uint16_t) noexcept nogil
     cdef int save_state(self, IntIOInterface) except -1
     cdef int load_state(self, IntIOInterface) except -1
 
@@ -119,7 +127,8 @@ cdef class HDMA:
     cdef bint block_done
 
     @cython.locals(bytes_to_transfer=cython.int, transfer_type=cython.int,
-                   src=uint16_t, dst=uint16_t, i=cython.int)
+                   src=uint16_t, dst=uint16_t, i=cython.int, block=cython.int,
+                   block_src=uint16_t, block_dst=uint16_t)
     cdef void set_hdma5(self, uint8_t, Motherboard) noexcept nogil
     @cython.locals(src=uint16_t, dst=uint16_t, i=cython.int)
     cdef int tick(self, Motherboard) noexcept nogil

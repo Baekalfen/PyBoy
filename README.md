@@ -121,13 +121,13 @@ The [documentation homepage](https://docs.pyboy.dk/) shows how to interface with
 Performance
 ===========
 
-Performance is a priority for PyBoy, to make your AI training and scripts as fast as possible.
+Performance is a priority for PyBoy, to make your AI training and scripts as fast as possible. Use the fast-mode to allow less accurate emulation, in exchange for performance: `p = PyBoy(..., fast_mode=True)`.
 
 The easiest way to improve your performance, is to skip rendering of unnecessary frames. If you know your
 character takes X frames to move, or the game doesn't take input every frame, you can skip those to potentially triple
 your performance. All game logic etc. will still process.
 
-Here is a simple comparison of rendering every frame, rendering every 15th frame, and not rendering any frames (higher is better). See [`pyboy.tick`](https://docs.pyboy.dk/#pyboy.PyBoy.tick) for how it works. Your performance will depend on the game.
+Here is a simple comparison of rendering every frame, rendering every 25th frame, and not rendering any frames (higher is better). See [`pyboy.tick`](https://docs.pyboy.dk/#pyboy.PyBoy.tick) for how it works. Your performance will depend on the game.
 
 <table>
   <tbody>
@@ -136,7 +136,7 @@ Here is a simple comparison of rendering every frame, rendering every 15th frame
         Full rendering
       </td>
       <td align="center">
-        Frame-skip 15
+        Frame-skip 25
       </td>
       <td align="center">
         No rendering
@@ -144,13 +144,13 @@ Here is a simple comparison of rendering every frame, rendering every 15th frame
     </tr>
     <tr>
       <td>
-      x124 realtime
+      x625 realtime
       </td>
       <td>
-      x344 realtime
+      x970 realtime
       </td>
       <td>
-      x395 realtime
+      x1014 realtime
       </td>
     </tr>
 <tr> <!-- Markdown/HTML broken after this -->
@@ -165,8 +165,8 @@ for _ in range(target):
 <td >
 
 ```python
-for _ in range(target//15):
-    pyboy.tick(15)
+for _ in range(target//25):
+    pyboy.tick(25)
 
 ```
 </td>
@@ -182,10 +182,10 @@ pyboy.tick(target, False)
 </table>
 
 The Game Boy was originally running at 60 frames per second, so a speed-up of 100x realtime is 6,000 frames per
-second. And trivially from the table above, simulating 395 hours of gameplay can be done in 1 hour with no rendering.
+second. And trivially from the table above, simulating 1,014 hours of gameplay can be done in 1 hour with no rendering.
 
 It's also recommended to be running multiple instances of PyBoy in parallel. On an 8-core machine, you could potentially
-do 3160 hours of gameplay in 1 hour.
+do 8,112 hours of gameplay in 1 hour.
 
 Contributing
 ============

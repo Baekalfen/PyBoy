@@ -9,36 +9,18 @@ from multiprocessing import shared_memory
 import pyboy
 from pyboy.utils import MAX_CYCLES, PyBoyInvalidOperationException
 
+import cython
+
 logger = pyboy.logging.get_logger(__name__)
-
-try:
-    import cython
-except ImportError:
-
-    class _mock:
-        def __enter__(self):
-            pass
-
-        def __exit__(self, *args):
-            pass
-
-    exec(
-        """
-class cython:
-    gil = _mock()
-    nogil = _mock()
-""",
-        globals(),
-        locals(),
-    )
 
 
 CYCLES_8192HZ = 128
 
 
 class Serial:
-    def __init__(self, cgb_mode):
+    def __init__(self, cgb_mode, emulate=True):
         self.cgb_mode = cgb_mode  # Indicates if we are CGB hardware, running in CGB or DMG mode
+        self.emulate = emulate
         self.SB = 0xFF  # Always 0xFF for a disconnected link cable
         if self.cgb_mode:
             self.SC = 0b01111100
@@ -46,16 +28,20 @@ class Serial:
             self.SC = 0b01111110
         self.transfer_enabled = 0
         self.internal_clock = 0
-        self._cycles_to_interrupt = 0
+        self._cycles_to_interrupt = MAX_CYCLES if not self.emulate else 0
         self.last_cycles = 0
         self.clock = 0
         self.clock_target = MAX_CYCLES
 
     def set_SB(self, value):
+        if not self.emulate:
+            return
         # Always 0xFF when cable is disconnected. Connecting is not implemented yet.
         self.SB = 0xFF
 
     def set_SC(self, value):  # cgb, double_speed
+        if not self.emulate:
+            return
         if self.cgb_mode:
             self.SC = value | 0b01111100  # Mask out read-only bits
         else:
@@ -82,6 +68,10 @@ class Serial:
         if cycles == 0:
             return False
         self.last_cycles = _cycles
+
+        if not self.emulate:
+            self._cycles_to_interrupt = MAX_CYCLES
+            return False
 
         self.clock += cycles
 
@@ -123,6 +113,14 @@ class Serial:
         self._cycles_to_interrupt = f.read_64bit()
         self.clock = f.read_64bit()
         self.clock_target = f.read_64bit()
+        if not self.emulate:
+            self.SB = 0xFF
+            self.SC = 0b01111100 if self.cgb_mode else 0b01111110
+            self.transfer_enabled = 0
+            self.internal_clock = 0
+            self._cycles_to_interrupt = MAX_CYCLES
+            self.clock = 0
+            self.clock_target = MAX_CYCLES
 
     def stop(self):
         pass

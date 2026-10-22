@@ -54,6 +54,13 @@ ignored_attrs = [
     "serialbuffer",
     "serialbuffer_count",
     "disable_renderer",  # Not set before calling .tick()
+    "gpu_vram0_generation",  # Runtime-only GPU cache invalidation counters
+    "gpu_vram1_generation",
+    "gpu_oam_generation",
+    "_gpu_vram0_generation",
+    "_gpu_vram1_generation",
+    "_gpu_oam_generation",
+    "gpu_memory_tracking_enabled",
     "__dict__",
 ]
 

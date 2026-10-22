@@ -38,26 +38,7 @@ from pyboy.utils import (
     OPCODE_BRK,
 )
 
-try:
-    import cython
-except ImportError:
-
-    class _mock:
-        def __enter__(self):
-            pass
-
-        def __exit__(self, *args):
-            pass
-
-    exec(
-        """
-class cython:
-    gil = _mock()
-    nogil = _mock()
-""",
-        globals(),
-        locals(),
-    )
+import cython
 
 from .api import Sprite, Tile, constants
 from .core.mb import Motherboard
@@ -101,6 +82,7 @@ class PyBoy:
         sound_volume=100,
         sound_emulated=True,
         sound_sample_rate=None,
+        fast_mode=False,
         cgb=None,
         gameshark=None,
         no_input=False,
@@ -144,14 +126,16 @@ class PyBoy:
                 path-based ROM, PyBoy looks for `<gamerom>.ram`; pass a destination to `stop` to save to a stream.
             rtc_file (binary file-like object or None): Existing cartridge RTC data to load. When omitted for a
                 path-based ROM, PyBoy looks for `<gamerom>.rtc`; pass a destination to `stop` to save to a stream.
-            window (str): Window backend: "SDL2", "OpenGL", "GLFW", or "null". "headless" and "dummy" are aliases
-                for "null".
+            window (str): Window backend: "SDL2", "Metal", "OpenGL", "GLFW", or "null". Metal requires macOS,
+                fast mode, and PyTorch MPS. "headless" and "dummy" are aliases for "null".
             scale (int): Window scale factor; it does not affect API image dimensions.
             symbols (str or os.PathLike or None): Path to a `.sym` or `.map` symbol file.
             bootrom (str or os.PathLike or None): Path to a boot ROM to use instead of the built-in boot ROM.
             sound_volume (int): Sound volume from 0 to 100. Defaults to 100.
             sound_emulated (bool): Whether to emulate sound. Disabling it also disables sound sampling.
             sound_sample_rate (int or None): Positive sound sample rate in Hz. Defaults to 48,000 Hz.
+            fast_mode (bool): Use faster, less accurate emulation without sound or serial, with simplified LCD timing
+                and frame-end rendering.
             cgb (bool or None): Force Game Boy Color mode (`True`) or original Game Boy mode (`False`); `None`
                 auto-detects the mode from the ROM and boot ROM.
             gameshark (str or None): Comma-separated GameShark codes to apply at startup.
@@ -179,6 +163,7 @@ class PyBoy:
 
         self.initialized = False
         self.no_input = no_input
+        self.fast_mode = fast_mode
 
         _log_level(log_level)
 
@@ -196,8 +181,8 @@ class PyBoy:
             )
             window = kwargs.pop("window_type")
 
-        if window not in ["SDL2", "OpenGL", "GLFW", "null", "headless", "dummy"]:
-            raise KeyError(f'Unknown window type: {window}. Use "SDL2", "OpenGL", "GLFW", or "null"')
+        if window not in ["SDL2", "Metal", "OpenGL", "GLFW", "null", "headless", "dummy"]:
+            raise KeyError(f'Unknown window type: {window}. Use "SDL2", "Metal", "OpenGL", "GLFW", or "null"')
 
         kwargs["window"] = window
         kwargs["scale"] = scale
@@ -210,6 +195,9 @@ class PyBoy:
 
         if gamerom is None:
             raise FileNotFoundError("No game ROM provided!")
+
+        if fast_mode and serial_shared_memory is not None:
+            raise PyBoyInvalidOperationException("Serial shared memory is not available in fast mode.")
 
         gamerom_file = None
         self.gamerom = None
@@ -279,6 +267,7 @@ class PyBoy:
                 randomize=randomize,
                 serial_shared_memory=serial_shared_memory,
                 serial_interrupt_based=serial_interrupt_based,
+                fast_mode=fast_mode,
             )
         finally:
             # Close the files we opened -- i.e. not passed from args
@@ -704,6 +693,8 @@ class PyBoy:
                 count -= 1
         t_tick = time.perf_counter_ns()
         self._post_tick()
+        if self._plugin_manager.window_metal_enabled:
+            self._plugin_manager.window_metal.raise_pending_error()
         t_post = time.perf_counter_ns()
 
         if _count > 0:
@@ -2157,6 +2148,7 @@ class PyBoyMemoryView:
                     raise PyBoyOutOfBoundsException("VRAM Bank out of range")
 
                 if bank == 0:
+                    changed = False
                     if not is_single:
                         # Writing slice of memory space
                         if hasattr(v, "__iter__"):
@@ -2164,13 +2156,28 @@ class PyBoyMemoryView:
                                 raise PyBoyInvalidInputException("slice does not match length of data")
                             _v = iter(v)
                             for x in range(start, stop, step):
-                                self.mb.lcd.VRAM0[x] = next(_v)
+                                value = next(_v)
+                                if self.mb.lcd.VRAM0[x] != value:
+                                    changed = True
+                                self.mb.lcd.VRAM0[x] = value
+                                if self.mb.fast_mode and x < 0x1800:
+                                    self.mb.lcd.renderer.invalidate_tile(x // 16, 0)
                         else:
                             for x in range(start, stop, step):
+                                if self.mb.lcd.VRAM0[x] != v:
+                                    changed = True
                                 self.mb.lcd.VRAM0[x] = v
+                                if self.mb.fast_mode and x < 0x1800:
+                                    self.mb.lcd.renderer.invalidate_tile(x // 16, 0)
                     else:
+                        changed = self.mb.lcd.VRAM0[start] != v
                         self.mb.lcd.VRAM0[start] = v
+                        if self.mb.fast_mode and start < 0x1800:
+                            self.mb.lcd.renderer.invalidate_tile(start // 16, 0)
+                    if changed:
+                        self.mb.lcd.mark_vram_dirty(0)
                 else:
+                    changed = False
                     if not is_single:
                         # Writing slice of memory space
                         if hasattr(v, "__iter__"):
@@ -2178,12 +2185,26 @@ class PyBoyMemoryView:
                                 raise PyBoyInvalidInputException("slice does not match length of data")
                             _v = iter(v)
                             for x in range(start, stop, step):
-                                self.mb.lcd.VRAM1[x] = next(_v)
+                                value = next(_v)
+                                if self.mb.lcd.VRAM1[x] != value:
+                                    changed = True
+                                self.mb.lcd.VRAM1[x] = value
+                                if self.mb.fast_mode and x < 0x1800:
+                                    self.mb.lcd.renderer.invalidate_tile(x // 16, 1)
                         else:
                             for x in range(start, stop, step):
+                                if self.mb.lcd.VRAM1[x] != v:
+                                    changed = True
                                 self.mb.lcd.VRAM1[x] = v
+                                if self.mb.fast_mode and x < 0x1800:
+                                    self.mb.lcd.renderer.invalidate_tile(x // 16, 1)
                     else:
+                        changed = self.mb.lcd.VRAM1[start] != v
                         self.mb.lcd.VRAM1[start] = v
+                        if self.mb.fast_mode and start < 0x1800:
+                            self.mb.lcd.renderer.invalidate_tile(start // 16, 1)
+                    if changed:
+                        self.mb.lcd.mark_vram_dirty(1)
             elif start < 0xC000:
                 start -= 0xA000
                 stop -= 0xA000

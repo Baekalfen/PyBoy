@@ -101,7 +101,7 @@ parser.add_argument(
     "--window",
     default=defaults["window"],
     type=str,
-    choices=["SDL2", "OpenGL", "GLFW", "null"],
+    choices=["SDL2", "Metal", "OpenGL", "GLFW", "null"],
     help="Specify window-type to use",
 )
 parser.add_argument("-s", "--scale", default=defaults["scale"], type=int, help="The scaling multiplier for the window")
@@ -118,6 +118,14 @@ gameboy_type_parser.add_argument(
 )
 gameboy_type_parser.add_argument(
     "--cgb", action="store_const", const=True, dest="cgb", help="Force emulator to run as Game Boy Color"
+)
+
+parser.add_argument(
+    "--fast",
+    "--fast-mode",
+    dest="fast_mode",
+    action="store_true",
+    help="Use faster, less accurate emulation without sound or serial; simplify LCD timing, rendering, and VRAM access",
 )
 
 # NOTE: Inverted logic on variable

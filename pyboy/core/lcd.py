@@ -7,6 +7,7 @@ from array import array
 from ctypes import c_void_p
 from random import getrandbits
 
+import cython
 import pyboy
 from pyboy.utils import PyBoyException, INTR_VBLANK, INTR_LCDC, FRAME_CYCLES
 from pyboy.api.constants import ROWS, COLS, TILES
@@ -55,6 +56,10 @@ class LCD:
     def __init__(self, cgb, cgb_mode, color_palette, cgb_color_palette, randomize=False):
         self.VRAM0 = array("B", [0] * VIDEO_RAM)
         self.OAM = array("B", [0] * OBJECT_ATTRIBUTE_MEMORY)
+        self.gpu_memory_tracking_enabled = False
+        self.gpu_vram0_generation = 0
+        self.gpu_vram1_generation = 0
+        self.gpu_oam_generation = 0
         self.disable_renderer = False
 
         if randomize:
@@ -115,7 +120,7 @@ class LCD:
             self.BGP = PaletteRegister(0xFC, color_palette)
             self.OBP0 = PaletteRegister(0xFF, color_palette)
             self.OBP1 = PaletteRegister(0xFF, color_palette)
-        self.renderer = Renderer(self, self.cgb)
+        self.renderer = self._create_renderer()
 
         # CGB specific
         if self.cgb:
@@ -126,6 +131,9 @@ class LCD:
             self.bcpd = PaletteColorRegister(self.bcps)
             self.ocps = PaletteIndexRegister()  # Only stored here for access in mb
             self.ocpd = PaletteColorRegister(self.ocps)
+
+    def _create_renderer(self):
+        return Renderer(self, self.cgb)
 
     def switch_cgb(self, is_dmg_rom):
         # Bootrom requests CGB hardware to switch to DMG rendering. This is only
@@ -429,13 +437,10 @@ class LCD:
         cgb_hardware = self._is_cgb_hardware()
         sprite_line = 0 if mode == 1 else self.LY
         mode3_adjustment = self._mode3_timing_adjustment(sprite_line)
-        # The STAT mode-3 and mode-0 lengths are the same in double speed as
-        # in normal speed; the mode bits readable from STAT lag the internal
-        # mode change instead [daid/speed_switch_timing_stat, tests/test_daid.py]
         normal_mode3 = 170 + mode3_adjustment if cgb_hardware else 172 + mode3_adjustment
+        mode3 = 172 + mode3_adjustment if self.first_frame else normal_mode3
 
         if mode == 2:
-            mode3 = 172 + mode3_adjustment if self.first_frame else normal_mode3
             return remainder + mode3
         elif mode == 1:
             if self.stat_transition == STAT_TRANSITION_LY153_DMG:
@@ -509,13 +514,13 @@ class LCD:
 
         vblank_stat_pretriggered = False
 
-        if self._should_pretrigger_vblank_stat() and self.clock >= self.clock_target - 4:
+        if cython.unlikely(self._should_pretrigger_vblank_stat() and self.clock >= self.clock_target - 4):
             # CGB hardware keeps this timing after switching to DMG compatibility mode.
             self.stat_transition = STAT_TRANSITION_VBLANK_PRETRIGGERED
             interrupt_flag |= INTR_LCDC
 
         if self.clock >= self.clock_target:
-            if self._LCDC.lcd_enable and self.reset:
+            if cython.unlikely(self._LCDC.lcd_enable and self.reset):
                 self.reset = False
                 self.frame_done = True
 
@@ -550,7 +555,9 @@ class LCD:
                 self.stat_transition = STAT_TRANSITION_LY153_WRAP
                 self.clock_target += 441
 
-            elif self._LCDC.lcd_enable and (self.LY == 153 or self.stat_transition == STAT_TRANSITION_LY153_WRAP):
+            elif cython.unlikely(
+                self._LCDC.lcd_enable and (self.LY == 153 or self.stat_transition == STAT_TRANSITION_LY153_WRAP)
+            ):
                 # The dot renderer's pipeline state is dead once the frame
                 # wraps; neutralize it so a state saved here loads into a
                 # fresh renderer identically. The mode-3 anchors are dead
@@ -569,7 +576,6 @@ class LCD:
                     # book-keeping from the previous frame no longer compares
                     # against it
                     self.stat_mode_lag_until = 0
-                    self.first_frame = False
                     self.clock_target = self.clock_target % FRAME_CYCLES + 80
                     self.next_stat_mode = 3
                     self.stat_transition = STAT_TRANSITION_NONE
@@ -590,6 +596,7 @@ class LCD:
                         interrupt_flag |= stat_irq
                     self.renderer.wy_activated_frame = self._LCDC.window_enable and self.WY == self.LY
                     interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+                    self.first_frame = False
 
             elif self._LCDC.lcd_enable and self.stat_transition == STAT_TRANSITION_ADVANCE_LY:
                 self.LY += 1
@@ -652,7 +659,7 @@ class LCD:
                     # tests/test_daid.py]
                     self.stat_mode_lag_bits = self._STAT._mode & 0b11
                     self.stat_mode_lag_until = self.clock_target + 2
-                if self.stat_transition == STAT_TRANSITION_VBLANK_PRETRIGGERED:
+                if cython.unlikely(self.stat_transition == STAT_TRANSITION_VBLANK_PRETRIGGERED):
                     self.stat_transition = STAT_TRANSITION_NONE
                     vblank_stat_pretriggered = True
                 stat_irq = self._STAT.set_mode(self.next_stat_mode)
@@ -691,12 +698,12 @@ class LCD:
                     )
                 elif self._STAT._mode == 3:
                     self.mode3_start_clock = self.clock_target
+                    self.mode3_extension = 0
                     # The dot renderer's pipeline produces the sprite and
                     # SCX mode-3 penalties naturally. The analytic estimate
                     # could overshoot the pipeline's natural finish and cut
-                    # mode 3 short, so start from the unadjusted base
-                    # length and let the pipeline extend it.
-                    self.mode3_extension = 0
+                    # mode 3 short, so start from the unadjusted base length
+                    # and let the pipeline extend it.
                     if self.first_frame:
                         self.clock_target += 172
                     elif self._is_cgb_hardware():
@@ -998,12 +1005,192 @@ class LCD:
 
         # The dot-accurate renderer cannot resume a partially rendered line
         self.renderer.dot_ly = -1
+        self.gpu_vram0_generation += 1
+        self.gpu_vram1_generation += 1
+        self.gpu_oam_generation += 1
+
+    def mark_vram_dirty(self, bank):
+        if not self.gpu_memory_tracking_enabled:
+            return
+        if bank == 0:
+            self.gpu_vram0_generation += 1
+        else:
+            self.gpu_vram1_generation += 1
 
     def getwindowpos(self):
         return (self.WX - 7, self.WY)
 
     def getviewport(self):
         return (self.SCX, self.SCY)
+
+
+class FastLCD(LCD):
+    def _create_renderer(self):
+        return FastRenderer(self, self.cgb)
+
+    def cycles_to_mode0(self):
+        mode = self._STAT._mode & 0b11
+        remainder = self.clock_target - self.clock
+
+        if mode == 0:
+            return 0
+        elif mode == 3:
+            return remainder
+
+        mode2 = 80
+        mode3 = 172
+        if mode == 2:
+            return remainder + mode3
+        elif mode == 1:
+            remaining_ly = 153 - self.LY
+            return remainder + 456 * remaining_ly + mode2 + mode3
+
+    def tick(self, _cycles):
+        cycles = _cycles - self.last_cycles
+        if cycles == 0:
+            return False
+        self.last_cycles = _cycles
+
+        interrupt_flag = 0
+        self.clock += cycles >> self.speed_shift
+        vblank_stat_pretriggered = False
+
+        if self.clock >= self.clock_target:
+            if cython.unlikely(self._LCDC.lcd_enable and self.reset):
+                self.reset = False
+                self.frame_done = True
+
+                self.LY = 0
+                self.clock = 0
+                self.clock_target = 76
+                self.next_stat_mode = 3
+                self.stat_transition = STAT_TRANSITION_NONE
+                interrupt_flag |= self._STAT.set_mode(0)
+                self.renderer.wy_activated_frame = self.WY == self.LY
+                interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+
+            elif cython.unlikely(self._LCDC.lcd_enable and self.LY == 153):
+                if self.first_frame and self.clock_target < FRAME_CYCLES:
+                    self.clock_target = FRAME_CYCLES
+                else:
+                    self.frame_done = True
+                    self.LY = 0
+                    self.clock %= FRAME_CYCLES
+                    self.clock_target = self.clock_target % FRAME_CYCLES + 80
+                    self.next_stat_mode = 3
+                    self.stat_transition = STAT_TRANSITION_NONE
+                    interrupt_flag |= self._STAT.set_mode(2)
+                    self.renderer.wy_activated_frame = self.WY == self.LY
+                    interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+                    if not self.first_frame:
+                        self.renderer.render_frame()
+                    self.first_frame = False
+
+            elif self._LCDC.lcd_enable and self.stat_transition == STAT_TRANSITION_ADVANCE_LY:
+                self.LY += 1
+                if self.first_frame:
+                    self._STAT.value &= 0xFB
+                    interrupt_flag |= self._STAT._update_irq_line()
+                else:
+                    interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+                self.clock_target += 4
+                self.stat_transition = STAT_TRANSITION_START_MODE2
+
+            elif self._LCDC.lcd_enable and self.stat_transition == STAT_TRANSITION_START_MODE2:
+                interrupt_flag |= self._STAT.set_mode(2)
+                if self.first_frame:
+                    interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+                self.clock_target += 80
+                self.next_stat_mode = 3
+                self.stat_transition = STAT_TRANSITION_NONE
+                self.renderer.wy_activated_frame = self.renderer.wy_activated_frame | (self.WY == self.LY)
+
+            elif self._LCDC.lcd_enable:
+                if self.stat_transition == STAT_TRANSITION_VBLANK_PRETRIGGERED:
+                    self.stat_transition = STAT_TRANSITION_NONE
+                previous_mode = self._STAT._mode
+                interrupt_flag |= self._STAT.set_mode(self.next_stat_mode)
+
+                if self._STAT._mode == 2:
+                    self.LY += 1
+                    self.clock_target += 80
+                    self.next_stat_mode = 3
+                    self.stat_transition = STAT_TRANSITION_NONE
+                    interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+                    self.renderer.wy_activated_frame = self.renderer.wy_activated_frame | (self.WY == self.LY)
+                elif self._STAT._mode == 3:
+                    self.mode3_adjustment = 0
+                    if not self.first_frame and previous_mode == 0:
+                        self.LY += 1
+                        interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+                        self.renderer.wy_activated_frame = self.renderer.wy_activated_frame | (self.WY == self.LY)
+                        self.clock_target += 252
+                    else:
+                        self.clock_target += 172
+                    self.next_stat_mode = 0
+                    self.stat_transition = STAT_TRANSITION_NONE
+                elif self._STAT._mode == 0:
+                    if self.first_frame:
+                        self.clock_target += 200 - self.mode3_adjustment
+                        if self.LY < 143:
+                            self.next_stat_mode = 2
+                            self.stat_transition = STAT_TRANSITION_ADVANCE_LY
+                        else:
+                            self.next_stat_mode = 1
+                            self.stat_transition = STAT_TRANSITION_NONE
+                    else:
+                        self.clock_target += 204
+                        self.next_stat_mode = 3 if self.LY < 143 else 1
+                        self.stat_transition = STAT_TRANSITION_NONE
+
+                    bx, by = self.getviewport()
+                    wx, wy = self.getwindowpos()
+                    self._scanlineparameters[self.LY][0] = self.SCX
+                    self._scanlineparameters[self.LY][1] = self.SCY
+                    self._scanlineparameters[self.LY][2] = self.WX
+                    self._scanlineparameters[self.LY][3] = self.WY
+                    self._scanlineparameters[self.LY][4] = self.renderer.wy_activated_frame
+                    if self.LY == ROWS - 1 and not self.disable_renderer and self.renderer.gpu_render_enabled():
+                        with cython.gil:
+                            self.renderer.prefetch_gpu_frame()
+                elif self._STAT._mode == 1:
+                    self.clock_target += 456
+                    self.next_stat_mode = 1
+                    self.stat_transition = STAT_TRANSITION_NONE
+
+                    self.LY += 1
+                    interrupt_flag |= self._STAT.update_LYC(self.LYC, self.LY)
+
+                    if self.LY == 144:
+                        if self._STAT.value & 0x20 and not self._STAT._irq_line and not vblank_stat_pretriggered:
+                            interrupt_flag |= INTR_LCDC
+                        interrupt_flag |= INTR_VBLANK
+                        self.renderer.wy_activated_frame = False
+                        if self.first_frame:
+                            self.renderer.blank_screen()
+                        if not self.disable_renderer and self.renderer.gpu_render_enabled():
+                            with cython.gil:
+                                self.renderer.render_gpu_frame()
+            else:
+                self.frame_done = True
+                self.clock %= FRAME_CYCLES
+                self.clock_target = FRAME_CYCLES
+                self.renderer.blank_screen()
+
+        cycles_to_interrupt = self.clock_target - self.clock
+        self._cycles_to_interrupt = cycles_to_interrupt << self.speed_shift
+        self._cycles_to_frame = (FRAME_CYCLES - self.clock) << self.speed_shift
+        return interrupt_flag
+
+    def load_state(self, f, state_version):
+        LCD.load_state(self, f, state_version)
+        self.mode3_adjustment = 0
+        if (
+            self._should_pretrigger_vblank_stat()
+            and self.clock <= self.clock_target
+            and self.clock_target - self.clock >= 4
+        ):
+            self._cycles_to_interrupt += 4 << self.speed_shift
 
 
 class PaletteRegister:
@@ -1024,6 +1211,10 @@ class PaletteRegister:
         return True
 
     def set_palette_colors(self, palette):
+        source_colors = []
+        for index in range(4):
+            source_colors.append(palette[index] & 0xFFFFFF)
+        self.palette_source_rgb = tuple(source_colors)
         self.palette_mem_rgb = [(rgb_to_bgr(c)) for c in palette]
         self._update_lookup()
 
@@ -1108,6 +1299,9 @@ class LCDCRegister:
         self.cgb_master_priority  = self.background_enable # Different meaning on CGB
         # fmt: on
 
+        self.backgroundmap_offset = 0x1800 if self.backgroundmap_select == 0 else 0x1C00
+        self.windowmap_offset = 0x1800 if self.windowmap_select == 0 else 0x1C00
+
 
 COL0_FLAG = 0b01
 BG_PRIORITY_FLAG = 0b10
@@ -1117,6 +1311,8 @@ class Renderer:
     def __init__(self, lcd, cgb):
         self.lcd = lcd
         self.cgb = cgb
+        self._background_view_dirty = True
+        self._background_dirty_tile_count = 0
         self.color_format = "RGBA"
 
         self.buffer_dims = (ROWS, COLS)
@@ -1174,6 +1370,7 @@ class Renderer:
         # WY has a strange behavior described at:
         # https://gbdev.io/pandocs/Scrolling.html#window
         self.wy_activated_frame = False
+        self.ly_window = 0
 
         # State for the dot-accurate renderer. reset_dot_pipeline neutralizes
         # the scalar state to what a running renderer holds between frames,
@@ -1186,7 +1383,251 @@ class Renderer:
         self.stop_vram_blocked = False
         self.reset_dot_pipeline()
 
+    def fast_scanline(self, y, bx, by, wx, window_active, window_line):
+        if self.lcd.disable_renderer:
+            return
+
+        if self.lcd._LCDC.window_enable and window_active and wx < COLS:
+            x = max(wx, 0)
+            if x:
+                self.scanline_background(y, 0, bx, by, x, self.lcd)
+            self.scanline_window(y, x, wx, 0, COLS - x, self.lcd, window_line)
+        elif self.lcd._LCDC.background_enable:
+            self.scanline_background(y, 0, bx, by, COLS, self.lcd)
+        else:
+            self.scanline_blank(y, 0, COLS, self.lcd)
+
+    def sort_sprites(self, sprite_count):
+        # Use insertion sort, as it has O(n) on already sorted arrays. This
+        # functions is likely called multiple times with unchanged data.
+        # Sort descending because of the sprite priority.
+
+        for i in range(1, sprite_count):
+            key = self.sprites_to_render[i]  # The current element to be inserted into the sorted portion
+            j = i - 1  # Index of the last element in the sorted portion of the array
+
+            # Move elements of the sorted portion greater than the key to the right
+            while j >= 0 and key > self.sprites_to_render[j]:
+                self.sprites_to_render[j + 1] = self.sprites_to_render[j]
+                j -= 1
+
+            # Insert the key into its correct position in the sorted portion
+            self.sprites_to_render[j + 1] = key
+
+    def fast_scanline_sprites(self, ly):
+        sprite_enabled = self.lcd._LCDC.sprite_enable
+        cgb_master_priority = self.lcd._LCDC.cgb_master_priority
+        if not sprite_enabled or self.lcd.disable_renderer:
+            return
+
+        spriteheight = 16 if self.lcd._LCDC.sprite_height else 8
+        for n in range(OBJECT_ATTRIBUTE_MEMORY - 4, -1, -4):
+            y = self.lcd.OAM[n] - 16
+            if y <= ly < y + spriteheight:
+                x = self.lcd.OAM[n + 1] - 8
+                tileindex = self.lcd.OAM[n + 2]
+                if spriteheight == 16:
+                    tileindex &= 0b11111110
+                attributes = self.lcd.OAM[n + 3]
+                xflip = attributes & 0b00100000
+                yflip = attributes & 0b01000000
+                sprite_cache_no = 0
+                if self.cgb:
+                    palette = attributes & 0b111
+                    if attributes & 0b1000:
+                        sprite_cache_no = 1
+                else:
+                    palette = 0
+                    if attributes & 0b10000:
+                        sprite_cache_no = 1
+
+                self.update_spritecache(sprite_cache_no, self.lcd, tileindex, sprite_cache_no if self.cgb else 0)
+                if spriteheight == 16:
+                    self.update_spritecache(
+                        sprite_cache_no, self.lcd, tileindex + 1, sprite_cache_no if self.cgb else 0
+                    )
+
+                dy = ly - y
+                yy = spriteheight - dy - 1 if yflip else dy
+                if not cython.compiled:
+                    for dx in range(8):
+                        xx = 7 - dx if xflip else dx
+                        color_code = self._spritecache[sprite_cache_no, 8 * tileindex + yy, xx]
+                        if 0 <= x + dx < COLS and color_code:
+                            bg_attributes = self._screenbuffer_attributes[ly, x + dx]
+                            if self.cgb:
+                                sprite_visible = not cgb_master_priority
+                                if cgb_master_priority:
+                                    if bg_attributes & BG_PRIORITY_FLAG:
+                                        sprite_visible = bool(bg_attributes & COL0_FLAG)
+                                    else:
+                                        sprite_visible = not attributes & 0x80 or bool(bg_attributes & COL0_FLAG)
+                            else:
+                                sprite_visible = not attributes & 0x80 or bool(bg_attributes & COL0_FLAG)
+                            if sprite_visible:
+                                if self.cgb:
+                                    pixel = self.lcd.ocpd.getcolor(palette, color_code)
+                                elif sprite_cache_no:
+                                    pixel = self.lcd.OBP1.getcolor(color_code)
+                                else:
+                                    pixel = self.lcd.OBP0.getcolor(color_code)
+                                self._screenbuffer[ly, x + dx] = pixel
+                    continue
+
+                sprite_row = self._spritecache_64[sprite_cache_no, 8 * tileindex + yy]
+                opaque_mask = _sprite_row_opaque_mask(sprite_row)
+                if _sprite_row_is_fully_opaque(opaque_mask):
+                    for dx in range(8):
+                        xx = 7 - dx if xflip else dx
+                        color_code = _sprite_row_color_code(sprite_row, xx)
+                        if 0 <= x + dx < COLS:
+                            bg_attributes = self._screenbuffer_attributes[ly, x + dx]
+                            if self.cgb:
+                                sprite_visible = not cgb_master_priority
+                                if cgb_master_priority:
+                                    if bg_attributes & BG_PRIORITY_FLAG:
+                                        sprite_visible = bool(bg_attributes & COL0_FLAG)
+                                    else:
+                                        sprite_visible = not attributes & 0x80 or bool(bg_attributes & COL0_FLAG)
+                            else:
+                                sprite_visible = not attributes & 0x80 or bool(bg_attributes & COL0_FLAG)
+                            if sprite_visible:
+                                if self.cgb:
+                                    pixel = self.lcd.ocpd.getcolor(palette, color_code)
+                                elif sprite_cache_no:
+                                    pixel = self.lcd.OBP1.getcolor(color_code)
+                                else:
+                                    pixel = self.lcd.OBP0.getcolor(color_code)
+                                self._screenbuffer[ly, x + dx] = pixel
+                else:
+                    while opaque_mask:
+                        xx = pyboy_sprite_pixel_index(opaque_mask)
+                        opaque_mask &= opaque_mask - 1
+                        dx = 7 - xx if xflip else xx
+                        if 0 <= x + dx < COLS:
+                            color_code = _sprite_row_color_code(sprite_row, xx)
+                            bg_attributes = self._screenbuffer_attributes[ly, x + dx]
+                            if self.cgb:
+                                sprite_visible = not cgb_master_priority
+                                if cgb_master_priority:
+                                    if bg_attributes & BG_PRIORITY_FLAG:
+                                        sprite_visible = bool(bg_attributes & COL0_FLAG)
+                                    else:
+                                        sprite_visible = not attributes & 0x80 or bool(bg_attributes & COL0_FLAG)
+                            else:
+                                sprite_visible = not attributes & 0x80 or bool(bg_attributes & COL0_FLAG)
+                            if sprite_visible:
+                                if self.cgb:
+                                    pixel = self.lcd.ocpd.getcolor(palette, color_code)
+                                elif sprite_cache_no:
+                                    pixel = self.lcd.OBP1.getcolor(color_code)
+                                else:
+                                    pixel = self.lcd.OBP0.getcolor(color_code)
+                                self._screenbuffer[ly, x + dx] = pixel
+
+    def scanline_sprites(self, ly, buffer, buffer_attributes, ignore_priority):
+        if not self.lcd._LCDC.sprite_enable or self.lcd.disable_renderer:
+            return
+
+        # Find the first 10 sprites in OAM that appears on this scanline.
+        # The lowest X-coordinate has priority, when overlapping
+        spriteheight = 16 if self.lcd._LCDC.sprite_height else 8
+        sprite_count = 0
+        for n in range(0x00, OBJECT_ATTRIBUTE_MEMORY, 4):
+            y = self.lcd.OAM[n] - 16  # Documentation states the y coordinate needs to be subtracted by 16
+            x = self.lcd.OAM[n + 1] - 8  # Documentation states the x coordinate needs to be subtracted by 8
+
+            if y <= ly < y + spriteheight:
+                # x is used for sorting for priority
+                if self.cgb:
+                    self.sprites_to_render[sprite_count] = n
+                else:
+                    self.sprites_to_render[sprite_count] = x << 16 | n
+                sprite_count += 1
+
+            if sprite_count == 10:
+                break
+
+        # Pan docs:
+        # When these 10 sprites overlap, the highest priority one will appear above all others, etc. (Thus, no
+        # Z-fighting.) In CGB mode, the first sprite in OAM ($FE00-$FE03) has the highest priority, and so on. In
+        # Non-CGB mode, the smaller the X coordinate, the higher the priority. The tie breaker (same X coordinates) is
+        # the same priority as in CGB mode.
+        self.sort_sprites(sprite_count)
+
+        for _n in self.sprites_to_render[:sprite_count]:
+            if self.cgb:
+                n = _n
+            else:
+                n = _n & 0xFF
+            # n = self.sprites_to_render_n[_n]
+            y = self.lcd.OAM[n] - 16  # Documentation states the y coordinate needs to be subtracted by 16
+            x = self.lcd.OAM[n + 1] - 8  # Documentation states the x coordinate needs to be subtracted by 8
+            tileindex = self.lcd.OAM[n + 2]
+            if spriteheight == 16:
+                tileindex &= 0b11111110
+            attributes = self.lcd.OAM[n + 3]
+            xflip = attributes & 0b00100000
+            yflip = attributes & 0b01000000
+            spritepriority = (attributes & 0b10000000) and not ignore_priority
+            sprite_cache_no = 0
+            if self.cgb:
+                palette = attributes & 0b111
+                if attributes & 0b1000:
+                    sprite_cache_no = 1
+            else:
+                # Fake palette index
+                palette = 0
+                if attributes & 0b10000:
+                    sprite_cache_no = 1
+
+            self.update_spritecache(sprite_cache_no, self.lcd, tileindex, sprite_cache_no if self.cgb else 0)
+            if self.lcd._LCDC.sprite_height:
+                self.update_spritecache(sprite_cache_no, self.lcd, tileindex + 1, sprite_cache_no if self.cgb else 0)
+
+            dy = ly - y
+            yy = spriteheight - dy - 1 if yflip else dy
+
+            for dx in range(8):
+                xx = 7 - dx if xflip else dx
+                color_code = self._spritecache[sprite_cache_no, 8 * tileindex + yy, xx]
+                if 0 <= x < COLS and not color_code == 0:  # If pixel is not transparent
+                    if self.cgb:
+                        pixel = self.lcd.ocpd.getcolor(palette, color_code)
+                        bgmappriority = buffer_attributes[ly, x] & BG_PRIORITY_FLAG
+
+                        if (
+                            self.lcd._LCDC.cgb_master_priority
+                        ):  # If 0, sprites are always on top, if 1 follow priorities
+                            if bgmappriority:  # If 0, use spritepriority, if 1 take priority
+                                if buffer_attributes[ly, x] & COL0_FLAG:
+                                    buffer[ly, x] = pixel
+                            elif (
+                                spritepriority
+                            ):  # If 1, sprite is behind bg/window. Color 0 of window/bg is transparent
+                                if buffer_attributes[ly, x] & COL0_FLAG:
+                                    buffer[ly, x] = pixel
+                            else:
+                                buffer[ly, x] = pixel
+                        else:
+                            buffer[ly, x] = pixel
+                    else:
+                        # TODO: Unify with CGB
+                        if attributes & 0b10000:
+                            pixel = self.lcd.OBP1.getcolor(color_code)
+                        else:
+                            pixel = self.lcd.OBP0.getcolor(color_code)
+
+                        if spritepriority:  # If 1, sprite is behind bg/window. Color 0 of window/bg is transparent
+                            if buffer_attributes[ly, x] & COL0_FLAG:  # if BG pixel is transparent
+                                buffer[ly, x] = pixel
+                        else:
+                            buffer[ly, x] = pixel
+                x += 1
+            x -= 8
+
     def clear_cache(self):
+        self._background_view_dirty = True
         self.clear_tilecache(0)
         if self.cgb:
             self.clear_tilecache(1)
@@ -1194,6 +1635,11 @@ class Renderer:
         self.clear_spritecache(1)
 
     def invalidate_tile(self, tile, vbank):
+        if not self._background_view_dirty:
+            tile_index = tile + vbank * TILES
+            if not self._background_dirty_tiles[tile_index]:
+                self._background_dirty_tiles[tile_index] = 1
+                self._background_dirty_tile_count += 1
         # TODO: Is this right?
         if vbank and self.cgb:
             self._tilecache_state[tile] = 0
@@ -1205,7 +1651,6 @@ class Renderer:
             if self.cgb:
                 self._tilecache_state[tile + TILES] = 0
             self._spritecache_state[tile] = 0
-            self._spritecache_state[tile + TILES] = 0
 
     def _clear_cache(self, cache_state, cache_no):
         for i in range(TILES):
@@ -2626,6 +3071,548 @@ class Renderer:
     # ██       ██    ██  ██   ██
     #  ██████   ██████   ██████
     #
+
+    def _cgb_get_background_map_attributes(self, lcd, i):
+        tile_num = self.lcd.VRAM1[i]
+        palette = tile_num & 0b111
+        vbank = (tile_num >> 3) & 1
+        horiflip = (tile_num >> 5) & 1
+        vertflip = (tile_num >> 6) & 1
+        bg_priority = (tile_num >> 7) & 1
+
+        return palette, vbank, horiflip, vertflip, bg_priority
+
+    def scanline(self, y):
+        if self.lcd.disable_renderer:
+            return
+
+        bx, by = self.lcd.getviewport()
+        wx, wy = self.lcd.getwindowpos()
+        x = 0
+        if self.lcd._LCDC.window_enable and self.wy_activated_frame and wx < COLS:
+            self.ly_window += 1
+            if wx > x:
+                x += self.scanline_background(y, x, bx, by, wx, self.lcd)
+            self.scanline_window(y, x, wx, wy, COLS - x, self.lcd, self.ly_window)
+        elif self.lcd._LCDC.background_enable:
+            self.scanline_background(y, x, bx, by, COLS, self.lcd)
+        else:
+            self.scanline_blank(y, x, COLS, self.lcd)
+
+        if y == 143:
+            self.ly_window = -1
+
+    def _get_tile(self, y, x, offset, lcd):
+        tile_addr = offset + y // 8 * 32 % 0x400 + x // 8 % 32
+        tile = lcd.VRAM0[tile_addr]
+        if not lcd._LCDC.tiledata_select:
+            tile = (tile ^ 0x80) + 128
+        yy = 8 * tile + y % 8
+        return tile, yy, tile_addr
+
+    def _pixel(self, cache_index, pixel, x, y, xx, yy, bg_priority_apply):
+        col0 = (self._tilecache[cache_index, yy, xx] == 0) & 1
+        self._screenbuffer[y, x] = pixel
+        self._screenbuffer_attributes[y, x] = bg_priority_apply | col0
+
+    def scanline_window(self, y, _x, wx, wy, cols, lcd, window_line):
+        for x in range(_x, _x + cols):
+            xx = (x - wx) % 8
+            if xx == 0 or x == _x:
+                wt, yy, _ = self._get_tile(window_line, x - wx, lcd._LCDC.windowmap_offset, lcd)
+                self.update_tilecache(0, lcd, wt, 0)
+
+            pixel = lcd.BGP.getcolor(self._tilecache[0, yy, xx])
+            self._pixel(0, pixel, x, y, xx, yy, 0)
+        return cols
+
+    def scanline_background(self, y, _x, bx, by, cols, lcd):
+        for x in range(_x, _x + cols):
+            b_xx = (x + (bx & 0b111)) % 8
+            if b_xx == 0 or x == 0:
+                bt, b_yy, _ = self._get_tile(y + by, x + bx, lcd._LCDC.backgroundmap_offset, lcd)
+                self.update_tilecache(0, lcd, bt, 0)
+
+            pixel = lcd.BGP.getcolor(self._tilecache[0, b_yy, b_xx])
+            self._pixel(0, pixel, x, y, b_xx, b_yy, 0)
+        return cols
+
+    def scanline_blank(self, y, _x, cols, lcd):
+        for x in range(_x, _x + cols):
+            self._screenbuffer[y, x] = lcd.BGP.getcolor(0)
+            self._screenbuffer_attributes[y, x] = COL0_FLAG
+        return cols
+
+    def _cgb_get_tile(self, y, x, offset, lcd):
+        tile, yy, tile_addr = self._get_tile(y, x, offset, lcd)
+        palette, vbank, horiflip, vertflip, bg_priority = self._cgb_get_background_map_attributes(lcd, tile_addr)
+        bg_priority_apply = BG_PRIORITY_FLAG if bg_priority else 0
+        if vertflip:
+            yy = 8 * tile + (7 - y % 8)
+        return tile, yy, palette, horiflip, bg_priority_apply, vbank
+
+    def cgb_scanline_window(self, y, _x, wx, wy, cols, lcd, window_line):
+        bg_priority_apply = 0
+        for x in range(_x, _x + cols):
+            xx = (x - wx) % 8
+            if xx == 0 or x == _x:
+                wt, yy, w_palette, w_horiflip, bg_priority_apply, vbank = self._cgb_get_tile(
+                    window_line, x - wx, lcd._LCDC.windowmap_offset, lcd
+                )
+                self.update_tilecache(vbank, lcd, wt, vbank)
+
+            if w_horiflip:
+                xx = 7 - xx
+
+            pixel = lcd.bcpd.getcolor(w_palette, self._tilecache[vbank, yy, xx])
+            self._pixel(vbank, pixel, x, y, xx, yy, bg_priority_apply)
+        return cols
+
+    def cgb_scanline_background(self, y, _x, bx, by, cols, lcd):
+        for x in range(_x, _x + cols):
+            xx = (x + (bx & 0b111)) % 8
+            if xx == 0 or x == 0:
+                bt, yy, b_palette, b_horiflip, bg_priority_apply, vbank = self._cgb_get_tile(
+                    y + by, x + bx, lcd._LCDC.backgroundmap_offset, lcd
+                )
+                self.update_tilecache(vbank, lcd, bt, vbank)
+
+            if b_horiflip:
+                xx = 7 - xx
+
+            pixel = lcd.bcpd.getcolor(b_palette, self._tilecache[vbank, yy, xx])
+            self._pixel(vbank, pixel, x, y, xx, yy, bg_priority_apply)
+        return cols
+
+    def cgb_scanline(self, y):
+        if self.lcd.disable_renderer:
+            return
+
+        bx, by = self.lcd.getviewport()
+        wx, wy = self.lcd.getwindowpos()
+        x = 0
+        if self.lcd._LCDC.window_enable and self.wy_activated_frame and wx < COLS:
+            self.ly_window += 1
+            if wx > x:
+                x += self.cgb_scanline_background(y, x, bx, by, wx, self.lcd)
+            self.cgb_scanline_window(y, x, wx, wy, COLS - x, self.lcd, self.ly_window)
+        else:
+            self.cgb_scanline_background(y, x, bx, by, COLS, self.lcd)
+
+        if y == 143:
+            self.ly_window = -1
+
+    def render_frame(self):
+        pass
+
+    def set_gpu_frame_renderer(self, frame_renderer):
+        self._gpu_frame_renderer = frame_renderer
+        self._gpu_render_error = None
+
+    def prefetch_gpu_frame(self):
+        frame_renderer = self._gpu_frame_renderer
+        if frame_renderer is None or getattr(getattr(frame_renderer, "device", None), "type", None) != "cuda":
+            return
+        generations = (
+            self.lcd.gpu_vram0_generation,
+            self.lcd.gpu_vram1_generation,
+            self.lcd.gpu_oam_generation,
+        )
+        if not frame_renderer.needs_memory_prefetch(generations):
+            return
+
+        get_prefetch_state = getattr(self, "get_gpu_prefetch_state", None)
+        if get_prefetch_state is None:
+            return
+        try:
+            frame_renderer.prefetch_memory(get_prefetch_state())
+        except Exception as error:
+            self._gpu_render_error = error
+
+    def render_gpu_frame(self):
+        if self._gpu_frame_renderer is None:
+            return
+        try:
+            self._gpu_frame_renderer.render(getattr(self, "get_gpu_render_state")())
+        except Exception as error:
+            self._gpu_render_error = error
+        else:
+            self._gpu_render_generation += 1
+
+    def take_gpu_render_error(self):
+        error = self._gpu_render_error
+        self._gpu_render_error = None
+        return error
+
+    def get_gpu_render_generation(self):
+        return self._gpu_render_generation
+
+    def gpu_render_enabled(self):
+        return 0
+
+class TilemapView:
+    def __init__(self):
+        self.pixels_raw = array("B", [0] * (256 * 256 * 4))
+        self.attributes_raw = array("B", [0] * (256 * 256))
+        self.map_snapshot_raw = array("B", [0] * 1024)
+        self.attributes_snapshot_raw = array("B", [0] * 1024)
+        self.pixels = memoryview(self.pixels_raw).cast("I", shape=(256, 256))
+        self.attributes = memoryview(self.attributes_raw).cast("B", shape=(256, 256))
+        self.map_snapshot = memoryview(self.map_snapshot_raw)
+        self.attributes_snapshot = memoryview(self.attributes_snapshot_raw)
+        if not cython.compiled:
+            self.palette = array("I", [0] * 32)
+        self.map_offset = -1
+        self.tiledata_select = -1
+        self.cgb = False
+        self.dirty = True
+
+
+class FastRenderer(Renderer):
+    def __init__(self, lcd, cgb):
+        Renderer.__init__(self, lcd, cgb)
+        self._gpu_render_enabled = False
+        self._background_dirty_tiles_raw = array("B", [0] * (TILES * 2))
+        self._background_dirty_tiles = memoryview(self._background_dirty_tiles_raw)
+        self._background_view = TilemapView()
+        self._window_view = TilemapView()
+        self._gpu_vram0_snapshot = None
+        self._gpu_vram1_snapshot = None
+        self._gpu_oam_snapshot = None
+        self._gpu_empty_vram = bytes(VIDEO_RAM)
+        self._gpu_vram0_generation = 0
+        self._gpu_vram1_generation = 0
+        self._gpu_oam_generation = 0
+
+    def _update_tilemap_view(self, view, map_offset):
+        dirty = self._background_view_dirty or view.dirty
+
+        if (
+            view.map_offset != map_offset
+            or view.tiledata_select != self.lcd._LCDC.tiledata_select
+            or view.cgb != self.cgb
+        ):
+            dirty = True
+
+        if not dirty:
+            if self.cgb:
+                for map_index in range(32):
+                    if view.palette[map_index] != self.lcd.bcpd.palette_mem_rgb[map_index]:
+                        dirty = True
+                        break
+            else:
+                for map_index in range(4):
+                    if view.palette[map_index] != self.lcd.BGP.lookup[map_index]:
+                        dirty = True
+                        break
+
+        for map_y in range(32):
+            for map_x in range(32):
+                map_index = map_y * 32 + map_x
+                map_entry = self.lcd.VRAM0[map_offset + map_index]
+                attribute = 0
+                cell_dirty = dirty or view.map_snapshot[map_index] != map_entry
+                if self.cgb:
+                    attribute = self.lcd.VRAM1[map_offset + map_index]
+                    if view.attributes_snapshot[map_index] != attribute:
+                        cell_dirty = True
+
+                if cell_dirty or self._background_dirty_tile_count:
+                    tile, yy, tile_addr = self._get_tile(map_y * 8, map_x * 8, map_offset, self.lcd)
+                    palette = 0
+                    vbank = 0
+                    horiflip = False
+                    vertflip = False
+                    bg_priority_apply = 0
+
+                    if self.cgb:
+                        palette, vbank, horiflip, vertflip, bg_priority = self._cgb_get_background_map_attributes(
+                            self.lcd, tile_addr
+                        )
+                        if bg_priority:
+                            bg_priority_apply = BG_PRIORITY_FLAG
+
+                    if not dirty and not cell_dirty and self._background_dirty_tile_count:
+                        tile_index = tile + vbank * TILES
+                        if self._background_dirty_tiles[tile_index]:
+                            cell_dirty = True
+
+                    if cell_dirty:
+                        self.update_tilecache(vbank, self.lcd, tile, vbank)
+                        for pixel_y in range(8):
+                            yy = tile * 8 + (7 - pixel_y if vertflip else pixel_y)
+                            for pixel_x in range(8):
+                                xx = 7 - pixel_x if horiflip else pixel_x
+                                color_index = self._tilecache[vbank, yy, xx]
+                                if self.cgb:
+                                    pixel = self.lcd.bcpd.getcolor(palette, color_index)
+                                else:
+                                    pixel = self.lcd.BGP.getcolor(color_index)
+
+                                view.pixels[map_y * 8 + pixel_y, map_x * 8 + pixel_x] = pixel
+                                view.attributes[map_y * 8 + pixel_y, map_x * 8 + pixel_x] = bg_priority_apply | (
+                                    (color_index == 0) & 1
+                                )
+
+                view.map_snapshot[map_index] = map_entry
+                if self.cgb:
+                    view.attributes_snapshot[map_index] = attribute
+
+        if self.cgb:
+            for map_index in range(32):
+                view.palette[map_index] = self.lcd.bcpd.palette_mem_rgb[map_index]
+        else:
+            for map_index in range(4):
+                view.palette[map_index] = self.lcd.BGP.lookup[map_index]
+
+        view.map_offset = map_offset
+        view.tiledata_select = self.lcd._LCDC.tiledata_select
+        view.cgb = self.cgb
+        view.dirty = False
+
+    def update_background_view(self):
+        background_enabled = self.cgb or self.lcd._LCDC.background_enable
+        window_visible = False
+        if self.lcd._LCDC.window_enable:
+            for y in range(ROWS):
+                wx = self.lcd._scanlineparameters[y][2] - 7
+                if self.lcd._scanlineparameters[y][4] and wx < COLS:
+                    window_visible = True
+                    break
+
+        background_map_offset = self.lcd._LCDC.backgroundmap_offset
+        window_map_offset = self.lcd._LCDC.windowmap_offset
+        update_background = background_enabled or (window_visible and window_map_offset == background_map_offset)
+        update_window = window_visible and window_map_offset != background_map_offset
+
+        if update_background:
+            self._update_tilemap_view(self._background_view, background_map_offset)
+        else:
+            self._background_view.dirty = True
+
+        if update_window:
+            self._update_tilemap_view(self._window_view, window_map_offset)
+        else:
+            self._window_view.dirty = True
+
+        if update_background or update_window:
+            self._background_view_dirty = False
+            if self._background_dirty_tile_count:
+                for tile_index in range(TILES * 2):
+                    self._background_dirty_tiles[tile_index] = 0
+                self._background_dirty_tile_count = 0
+
+    def copy_tilemap_scanline(self, view, y, dest_x, source_y, source_x, cols):
+        if cols <= 0:
+            return
+
+        map_y = source_y & 0xFF
+        map_x = source_x & 0xFF
+        copy_len = min(cols, 256 - map_x)
+        if cython.compiled:
+            _copy_background_pixels(self._screenbuffer, view.pixels, y, dest_x, map_y, map_x, copy_len)
+            _copy_background_attributes(
+                self._screenbuffer_attributes, view.attributes, y, dest_x, map_y, map_x, copy_len
+            )
+        else:
+            dest_pixel = (y * COLS + dest_x) * 4
+            source_pixel = (map_y * 256 + map_x) * 4
+            self._screenbuffer_raw[dest_pixel : dest_pixel + copy_len * 4] = view.pixels_raw[
+                source_pixel : source_pixel + copy_len * 4
+            ]
+            dest_attribute = y * COLS + dest_x
+            source_attribute = map_y * 256 + map_x
+            self._screenbuffer_attributes_raw[dest_attribute : dest_attribute + copy_len] = view.attributes_raw[
+                source_attribute : source_attribute + copy_len
+            ]
+
+        remaining = cols - copy_len
+        if remaining:
+            if cython.compiled:
+                _copy_background_pixels(self._screenbuffer, view.pixels, y, dest_x + copy_len, map_y, 0, remaining)
+                _copy_background_attributes(
+                    self._screenbuffer_attributes,
+                    view.attributes,
+                    y,
+                    dest_x + copy_len,
+                    map_y,
+                    0,
+                    remaining,
+                )
+            else:
+                dest_pixel = (y * COLS + dest_x + copy_len) * 4
+                source_pixel = map_y * 256 * 4
+                self._screenbuffer_raw[dest_pixel : dest_pixel + remaining * 4] = view.pixels_raw[
+                    source_pixel : source_pixel + remaining * 4
+                ]
+                dest_attribute = y * COLS + dest_x + copy_len
+                source_attribute = map_y * 256
+                self._screenbuffer_attributes_raw[dest_attribute : dest_attribute + remaining] = view.attributes_raw[
+                    source_attribute : source_attribute + remaining
+                ]
+
+    def render_scanline(self, y, window_line):
+        bx = self.lcd._scanlineparameters[y][0]
+        by = self.lcd._scanlineparameters[y][1]
+        wx = self.lcd._scanlineparameters[y][2] - 7
+        window_active = self.lcd._scanlineparameters[y][4]
+        background_enabled = self.cgb or self.lcd._LCDC.background_enable
+
+        if self.cgb:
+            if self.lcd._LCDC.window_enable and window_active and wx < COLS:
+                x = max(wx, 0)
+                self.copy_tilemap_scanline(self._background_view, y, 0, y + by, bx, x)
+                if self.lcd._LCDC.windowmap_offset == self.lcd._LCDC.backgroundmap_offset:
+                    self.copy_tilemap_scanline(self._background_view, y, x, window_line, x - wx, COLS - x)
+                else:
+                    self.copy_tilemap_scanline(self._window_view, y, x, window_line, x - wx, COLS - x)
+            else:
+                self.copy_tilemap_scanline(self._background_view, y, 0, y + by, bx, COLS)
+        else:
+            if self.lcd._LCDC.window_enable and window_active and wx < COLS:
+                x = max(wx, 0)
+                if background_enabled:
+                    self.copy_tilemap_scanline(self._background_view, y, 0, y + by, bx, x)
+                else:
+                    self.scanline_blank(y, 0, x, self.lcd)
+                if self.lcd._LCDC.windowmap_offset == self.lcd._LCDC.backgroundmap_offset:
+                    self.copy_tilemap_scanline(self._background_view, y, x, window_line, x - wx, COLS - x)
+                else:
+                    self.copy_tilemap_scanline(self._window_view, y, x, window_line, x - wx, COLS - x)
+            elif background_enabled:
+                self.copy_tilemap_scanline(self._background_view, y, 0, y + by, bx, COLS)
+            else:
+                self.scanline_blank(y, 0, COLS, self.lcd)
+        self.fast_scanline_sprites(y)
+
+    def render_frame(self):
+        if self.lcd.disable_renderer or self._gpu_render_enabled:
+            return
+
+        if not self.lcd._LCDC.lcd_enable:
+            self.blank_screen()
+            return
+
+        background_enabled = self.cgb or self.lcd._LCDC.background_enable
+        if background_enabled or self.lcd._LCDC.window_enable:
+            self.update_background_view()
+
+        window_line = -1
+        for y in range(ROWS):
+            wx = self.lcd._scanlineparameters[y][2] - 7
+            window_active = self.lcd._scanlineparameters[y][4]
+            if self.lcd._LCDC.window_enable and window_active and wx < COLS:
+                window_line += 1
+            self.render_scanline(y, window_line)
+
+        self.ly_window = -1
+
+    def get_background_view_buffer(self):
+        return self._background_view.pixels_raw
+
+    def get_gpu_prefetch_state(self):
+        lcd = self.lcd
+        lcd.gpu_memory_tracking_enabled = True
+        cgb = self.cgb
+
+        if self._gpu_vram0_snapshot is None or self._gpu_vram0_generation != lcd.gpu_vram0_generation:
+            if cython.compiled:
+                self._gpu_vram0_snapshot = _bytes_from_array(cython.address(lcd.VRAM0[0]), VIDEO_RAM)
+            else:
+                self._gpu_vram0_snapshot = bytes(lcd.VRAM0)
+            self._gpu_vram0_generation = lcd.gpu_vram0_generation
+        if cgb:
+            if self._gpu_vram1_snapshot is None or self._gpu_vram1_generation != lcd.gpu_vram1_generation:
+                if cython.compiled:
+                    self._gpu_vram1_snapshot = _bytes_from_array(cython.address(lcd.VRAM1[0]), VIDEO_RAM)
+                else:
+                    self._gpu_vram1_snapshot = bytes(lcd.VRAM1)
+                self._gpu_vram1_generation = lcd.gpu_vram1_generation
+            vram1 = self._gpu_vram1_snapshot
+        else:
+            vram1 = self._gpu_empty_vram
+        if self._gpu_oam_snapshot is None or self._gpu_oam_generation != lcd.gpu_oam_generation:
+            if cython.compiled:
+                self._gpu_oam_snapshot = _bytes_from_array(cython.address(lcd.OAM[0]), OBJECT_ATTRIBUTE_MEMORY)
+            else:
+                self._gpu_oam_snapshot = bytes(lcd.OAM)
+            self._gpu_oam_generation = lcd.gpu_oam_generation
+        vram0 = self._gpu_vram0_snapshot
+        oam = self._gpu_oam_snapshot
+
+        return {
+            "vram0": vram0,
+            "vram1": vram1,
+            "oam": oam,
+            "vram0_generation": lcd.gpu_vram0_generation,
+            "vram1_generation": lcd.gpu_vram1_generation,
+            "oam_generation": lcd.gpu_oam_generation,
+        }
+
+    def get_gpu_blank_render_state(self):
+        lcd = self.lcd
+        dmg_palettes = []
+        for palette in (lcd.BGP, lcd.OBP0, lcd.OBP1):
+            dmg_palettes.append(tuple(palette.palette_source_rgb))
+
+        return {
+            "lcdc": lcd._LCDC.value,
+            "background_palette_register": lcd.BGP.value,
+            "dmg_palettes": tuple(dmg_palettes),
+        }
+
+    def get_gpu_render_state(self):
+        state = self.get_gpu_prefetch_state()
+        lcd = self.lcd
+        if cython.compiled:
+            scanlines = _bytes_from_array(cython.address(lcd._scanlineparameters[0][0]), ROWS * 5)
+        else:
+            scanline_buffer = bytearray(ROWS * 5)
+            for y in range(ROWS):
+                for i in range(5):
+                    scanline_buffer[y * 5 + i] = lcd._scanlineparameters[y][i]
+            scanlines = bytes(scanline_buffer)
+
+        cgb = self.cgb
+        dmg_palettes = []
+        for palette in (lcd.BGP, lcd.OBP0, lcd.OBP1):
+            colors = []
+            for i in range(4):
+                colors.append(palette.palette_source_rgb[i])
+            dmg_palettes.append(tuple(colors))
+
+        background_color_palette = ()
+        object_color_palette = ()
+        if cgb:
+            background_colors = []
+            object_colors = []
+            for i in range(32):
+                background_colors.append(lcd.bcpd.palette_mem[i])
+                object_colors.append(lcd.ocpd.palette_mem[i])
+            background_color_palette = tuple(background_colors)
+            object_color_palette = tuple(object_colors)
+
+        state.update(
+            {
+                "scanlines": scanlines,
+                "cgb": cgb,
+                "lcdc": lcd._LCDC.value,
+                "background_map_offset": lcd._LCDC.backgroundmap_offset,
+                "window_map_offset": lcd._LCDC.windowmap_offset,
+                "background_palette_register": lcd.BGP.value,
+                "object_palette_registers": (lcd.OBP0.value, lcd.OBP1.value),
+                "dmg_palettes": tuple(dmg_palettes),
+                "background_color_palette": background_color_palette,
+                "object_color_palette": object_color_palette,
+            }
+        )
+        return state
+
+    def gpu_render_enabled(self):
+        return self._gpu_render_enabled
+
+    def set_gpu_render_enabled(self, enabled):
+        self._gpu_render_enabled = bool(enabled)
 
 
 class VBKregister:

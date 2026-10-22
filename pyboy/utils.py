@@ -19,6 +19,8 @@ __all__ = [
     "AccessError",
     "PillowImportError",
     "SoundEnabledError",
+    "likely",
+    "unlikely",
 ]
 
 STATE_VERSION = 30
@@ -153,12 +155,40 @@ class SoundEnabledError(AccessError, PyBoyFeatureDisabledError):
     _exception_message = "Sound is not enabled!"
 
 
+def likely(value):
+    return value
+
+
+def unlikely(value):
+    return value
+
+
+class _CythonContext:
+    def __enter__(self):
+        pass
+
+    def __exit__(self, *args):
+        pass
+
+
 try:
     from cython import compiled
 
     cython_compiled = compiled
 except ImportError:
     cython_compiled = False
+    import sys
+    from types import ModuleType
+
+    cython = ModuleType("cython")
+    cython.__path__ = []
+    cython.compiled = False
+    cython.gil = _CythonContext()
+    cython.nogil = _CythonContext()
+    cython.likely = likely
+    cython.unlikely = unlikely
+
+    sys.modules["cython"] = cython
 
 ##############################################################
 # Buffer classes

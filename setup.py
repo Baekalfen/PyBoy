@@ -78,22 +78,33 @@ class build_ext(_build_ext):
             cflags.append("-DCYTHON_INLINE=inline __attribute__ ((__unused__)) __attribute__((always_inline))")
 
         py_pxd_files = prep_pxd_py_files()
-        cythonize_files = map(
-            lambda src: Extension(
+        cythonize_files = [
+            Extension(
                 src.split(".")[0].replace(os.sep, "."),
                 [src],
                 extra_compile_args=cflags,
                 extra_link_args=[] if DEBUG else ["-s", "-w"],
                 include_dirs=[np.get_include()],
-            ),
-            list(py_pxd_files),
+            )
+            for src in py_pxd_files
+        ]
+        shared_utility_name = "pyboy._cython_utility"
+        cythonize_files.append(
+            Extension(
+                shared_utility_name,
+                [os.path.join(ROOT_DIR, "_cython_utility.c")],
+                extra_compile_args=cflags,
+                extra_link_args=[] if DEBUG else ["-s", "-w"],
+                include_dirs=[np.get_include()],
+            )
         )
         self.distribution.ext_modules = cythonize(
-            [*cythonize_files],
+            cythonize_files,
             nthreads=thread_count,
             annotate=False,
             gdb_debug=False,
             language_level=3,
+            shared_utility_qualified_name=shared_utility_name,
             compiler_directives={
                 "boundscheck": False,
                 "cdivision": True,
@@ -116,7 +127,8 @@ class build_ext(_build_ext):
 
 
 def prep_pxd_py_files():
-    ignore_py_files = ["__main__.py", "manager_gen.py", "opcodes_gen.py", "conftest.py"]
+    # Triton JIT inspects Python function source and cannot compile Cython functions.
+    ignore_py_files = ["__main__.py", "manager_gen.py", "opcodes_gen.py", "conftest.py", "torch_cuda.py"]
     # Cython doesn't trigger a recompile on .py files, where only the .pxd file has changed. So we fix this here.
     # We also yield the py_files that have a .pxd file, as we feed these into the cythonize call.
     for root, dirs, files in os.walk(ROOT_DIR):

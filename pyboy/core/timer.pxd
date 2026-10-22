@@ -23,7 +23,7 @@ cdef class Timer:
     cdef uint64_t DIV_counter, TIMA_counter
     cdef uint64_t[4] dividers
     cdef uint8_t tima_reload_state
-    cdef int64_t _cycles_to_interrupt
+    cdef int64_t _cycles_to_irq
     cdef uint64_t last_cycles
 
     @cython.locals(timer_bit=uint16_t)
@@ -33,6 +33,8 @@ cdef class Timer:
     cdef void write_tma(self, uint8_t) noexcept nogil
     @cython.locals(old_timer_bit=uint16_t, new_timer_bit=uint16_t)
     cdef void write_tac(self, uint8_t) noexcept nogil
+    @cython.locals(timer_bit=uint16_t, period=uint16_t, counter=uint16_t, next_edge=uint16_t, cycles_to_irq=uint64_t)
+    cdef void _update_cycles_to_irq(self) noexcept nogil
     cdef uint8_t read_tima(self) noexcept nogil
     @cython.locals(
         cycles=uint64_t,
@@ -45,6 +47,11 @@ cdef class Timer:
         end=uint64_t,
         tima_increases=uint64_t,
         next_edge=uint64_t,
+        steps=uint64_t,
+        edge_count=uint64_t,
+        increments_to_overflow=uint16_t,
+        timer_enabled=bint,
+        timer_edge=bint,
     )
     cdef bint tick(self, uint64_t) noexcept nogil
 

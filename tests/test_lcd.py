@@ -9,7 +9,7 @@ import pytest
 
 import numpy as np
 from pyboy import PyBoy
-from pyboy.core.lcd import LCD, Renderer
+from pyboy.core.lcd import FastLCD, FastRenderer, LCD, Renderer
 from pyboy.utils import cython_compiled, INTR_LCDC, FRAME_CYCLES
 
 color_palette = (0xFFFFFF, 0x999999, 0x555555, 0x000000)
@@ -18,6 +18,39 @@ cgb_color_palette = (
     (0xFFFFFF, 0xFF8484, 0xFF8484, 0x000000),
     (0xFFFFFF, 0xFF8484, 0xFF8484, 0x000000),
 )
+
+
+@pytest.mark.skipif(cython_compiled, reason="This test requires access to internal registers not available in Cython")
+def test_fast_mode_selects_matching_lcd_renderer(default_rom):
+    pyboy = PyBoy(default_rom, window="null")
+    try:
+        assert type(pyboy.mb.lcd) is LCD
+        assert type(pyboy.mb.lcd.renderer) is Renderer
+    finally:
+        pyboy.stop(save=False)
+
+    pyboy = PyBoy(default_rom, window="null", fast_mode=True)
+    try:
+        assert type(pyboy.mb.lcd) is FastLCD
+        assert type(pyboy.mb.lcd.renderer) is FastRenderer
+    finally:
+        pyboy.stop(save=False)
+
+
+def test_fast_mode_render_after_skipped_frames(default_rom):
+    rendered_pyboy = PyBoy(default_rom, window="null", fast_mode=True)
+    skipped_pyboy = PyBoy(default_rom, window="null", fast_mode=True)
+    try:
+        for _ in range(31):
+            rendered_pyboy.tick(1, True, False)
+
+        skipped_pyboy.tick(30, False, False)
+        skipped_pyboy.tick(1, True, False)
+
+        np.testing.assert_array_equal(skipped_pyboy.screen.ndarray, rendered_pyboy.screen.ndarray)
+    finally:
+        rendered_pyboy.stop(save=False)
+        skipped_pyboy.stop(save=False)
 
 
 @pytest.mark.skipif(cython_compiled, reason="This test requires access to internal registers not available in Cython")
@@ -153,6 +186,65 @@ def test_saveload_cycles(default_rom):
 
 @pytest.mark.skipif(cython_compiled, reason="This test requires access to internal registers not available in Cython")
 class TestLCD:
+    @pytest.mark.parametrize(
+        ("cgb", "cgb_mode"),
+        ((False, False), (True, True)),
+    )
+    def test_fast_mode_folds_mode2_into_mode3(self, cgb, cgb_mode):
+        lcd = FastLCD(cgb, cgb_mode, color_palette, cgb_color_palette)
+        lcd.set_lcdc(1 << 7)
+        lcd.reset = False
+        lcd.first_frame = False
+        lcd.clock = 0
+        lcd.clock_target = 1
+        lcd.last_cycles = 0
+        lcd.LY = 4
+        lcd._STAT.set_mode(0)
+        lcd.next_stat_mode = 3
+
+        lcd.tick(1)
+        assert lcd._STAT._mode == 3
+        assert lcd.LY == 5
+        assert lcd._cycles_to_interrupt == 252
+
+        lcd.tick(1 + 252)
+        assert lcd._STAT._mode == 0
+        assert lcd.LY == 5
+        assert lcd._cycles_to_interrupt == 204
+
+        lcd.tick(1 + 252 + 204)
+        assert lcd._STAT._mode == 3
+        assert lcd.LY == 6
+        assert lcd._cycles_to_interrupt == 252
+
+    def test_fast_mode_uses_fixed_cycles_for_mode0_queries(self):
+        lcd = FastLCD(True, True, color_palette, cgb_color_palette)
+        lcd.clock = 40
+        lcd.clock_target = 100
+        lcd._STAT.set_mode(2)
+        assert lcd.cycles_to_mode0() == 60 + 172
+
+        lcd.LY = 144
+        lcd._STAT.set_mode(1)
+        assert lcd.cycles_to_mode0() == 60 + 456 * 9 + 80 + 172
+
+    def test_fast_mode_does_not_pretrigger_vblank_stat(self):
+        lcd = FastLCD(True, True, color_palette, cgb_color_palette)
+        lcd.set_lcdc(1 << 7)
+        lcd.reset = False
+        lcd.first_frame = False
+        lcd.clock = 0
+        lcd.clock_target = 100
+        lcd.last_cycles = 0
+        lcd.LY = 143
+        lcd._STAT.set_mode(0)
+        lcd._STAT.value |= 0x20
+        lcd.next_stat_mode = 1
+
+        assert lcd.tick(96) == 0
+        assert lcd.stat_transition == 0
+        assert lcd._cycles_to_interrupt == 4
+
     def test_set_stat_mode(self):
         lcd = LCD(False, False, color_palette, cgb_color_palette)
         lcd._STAT._mode = 2  # Set mode 2 manually

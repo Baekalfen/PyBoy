@@ -18,6 +18,7 @@ env/
 venv/
 .venv/
 build/
+.pgo/
 cython_debug/
 develop-eggs/
 dist/

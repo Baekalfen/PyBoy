@@ -3,6 +3,7 @@
 # GitHub: https://github.com/Baekalfen/PyBoy
 #
 import pyboy
+import cython
 
 from . import opcodes
 from pyboy.utils import INTR_VBLANK, INTR_LCDC, INTR_TIMER, INTR_SERIAL, INTR_HIGHTOLOW
@@ -122,7 +123,7 @@ class CPU:
             f"IE: {self.mb.cpu.interrupts_enabled_register:08b}, "
             f"IF: {self.mb.cpu.interrupts_flag_register:08b}\n"
             f"LCD Intr.: {self.mb.lcd._cycles_to_interrupt}, LY:{self.mb.lcd.LY}, LYC:{self.mb.lcd.LYC}\n"
-            f"Timer Intr.: {self.mb.timer._cycles_to_interrupt}\n"
+            f"Timer IRQ in: {self.mb.timer._cycles_to_irq}\n"
             f"Sound: PCM12:{self.mb.sound.pcm12():02X}, PCM34:{self.mb.sound.pcm34():02X}\n"
             f"Sound CH1: \n"
             f"sound_period: {self.mb.sound.sweepchannel.sound_period}\n"
@@ -172,7 +173,7 @@ class CPU:
                     return 0
                 # The pause ended mid-window; execute the rest of it below
 
-        if self.check_interrupts():
+        if cython.unlikely(self.check_interrupts()):
             self.halted = False
 
         if self.halted and self.interrupt_queued:
@@ -194,21 +195,21 @@ class CPU:
             # NOTE: This is a very rare edge-case
             while self.cycles < _target:
                 self.fetch_and_execute_dma()
-                if self.bail:  # Possible cycles-target changes
+                if cython.unlikely(self.bail):  # Possible cycles-target changes
                     break
         else:
             while self.cycles < _target:
                 self.fetch_and_execute()
-                if self.bail:  # Possible cycles-target changes
+                if cython.unlikely(self.bail):  # Possible cycles-target changes
                     break
 
     def check_interrupts(self):
-        if self.interrupt_queued or self.interrupt_enable_delay:
+        if cython.unlikely(self.interrupt_queued or self.interrupt_enable_delay):
             # Interrupt already queued. This happens only when using a debugger.
             return False
 
         raised_and_enabled = (self.interrupts_flag_register & 0b11111) & (self.interrupts_enabled_register & 0b11111)
-        if raised_and_enabled:
+        if cython.unlikely(raised_and_enabled):
             # Clear interrupt flag
             if self.halted and not self.halted_during_ei:
                 self.PC += 1  # Escape HALT on return
@@ -303,6 +304,10 @@ class CPU:
             pc1 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected, self.PC - 0x4000]
             pc2 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected, self.PC + 1 - 0x4000]
             pc3 = self.mb.cartridge.rombanks[self.mb.cartridge.rombank_selected, self.PC + 2 - 0x4000]
+        elif 0xFF80 <= self.PC and self.PC + 2 < 0xFFFF and not self.mb.oam_dma_active:
+            pc1 = self.mb.ram.internal_ram1[self.PC - 0xFF80]
+            pc2 = self.mb.ram.internal_ram1[self.PC + 1 - 0xFF80]
+            pc3 = self.mb.ram.internal_ram1[self.PC + 2 - 0xFF80]
         else:
             self.memory_access_offset = 0
             pc1 = self.mb.getitem(self.PC)

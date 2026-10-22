@@ -39,7 +39,9 @@ cdef class WindowSDL2(PyBoyWindowPlugin):
     cdef object spec_want, spec_have
     cdef readonly bint sgb_border_enabled
 
+    cpdef void _initialize_video_audio(self, object) except *
     cdef void init_audio(self, Motherboard) noexcept
+    cpdef void _post_audio(self) except *
 
     @cython.locals(queued_bytes=int, frames_buffered=cython.double)
     cdef cython.double _get_sound_frames_buffered(self) noexcept
