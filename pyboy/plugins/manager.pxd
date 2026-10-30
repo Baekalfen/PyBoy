@@ -82,8 +82,8 @@ cdef class PluginManager:
     # plugin_cdef end
 
     cdef list handle_events(self, list)
-    cpdef void post_tick(self) noexcept
-    cdef void _post_tick_windows(self) noexcept
+    cpdef void post_tick(self) except *
+    cdef void _post_tick_windows(self) except *
     cdef void frame_limiter(self, int) noexcept
     cdef void paused(self, bint) noexcept
     cdef str window_title(self)

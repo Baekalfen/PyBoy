@@ -22,7 +22,6 @@ class WindowMetal(WindowSDL2):
         self._metal_view = None
         self._metal_layer = None
         self._screen = None
-        self._gpu_window_error = None
 
         if pyboy_argv.get("window") == "Metal":
             if not pyboy.fast_mode:
@@ -77,20 +76,9 @@ class WindowMetal(WindowSDL2):
         sdl2.SDL_ShowWindow(self._window)
 
     def post_tick(self):
-        try:
-            layer_address = getattr(self._metal_layer, "value", self._metal_layer)
-            self._screen._present_gpu_frame_metal(int(layer_address))
-            self._post_audio()
-        except Exception as error:
-            self._gpu_window_error = error
-        if self._plugin_manager.window_metal_enabled:
-            self._plugin_manager.window_metal.raise_pending_error()
-
-    def raise_pending_error(self):
-        if self._gpu_window_error is not None:
-            error = self._gpu_window_error
-            self._gpu_window_error = None
-            raise error
+        layer_address = getattr(self._metal_layer, "value", self._metal_layer)
+        self._screen._present_gpu_frame_metal(int(layer_address))
+        self._post_audio()
 
     def enabled(self):
         if self.pyboy_argv.get("window") != "Metal":

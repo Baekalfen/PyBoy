@@ -27,7 +27,7 @@ cdef class PyBoyPlugin:
     cdef dict pyboy_argv
     @cython.locals(event=WindowEvent)
     cdef list handle_events(self, list)
-    cdef void post_tick(self) noexcept
+    cdef void post_tick(self) except *
     cdef str window_title(self)
     cpdef void stop(self) except *
     cpdef object enabled(self) # object for actual Python bool and exceptions
@@ -76,7 +76,7 @@ cdef class PyBoyGameWrapper(PyBoyPlugin):
 
     cdef object saved_state
 
-    cpdef void post_tick(self) noexcept
+    cpdef void post_tick(self) except *
 
     cpdef void start_game(self, timer_div=*) except *
     cpdef void reset_game(self, timer_div=*) except *

@@ -49,7 +49,7 @@ cdef class GameBoyPrinter(PyBoyPlugin):
 
     cdef void __set_mb_serial(self) except *
     cdef void _initialize(self) noexcept
-    cdef void post_tick(self) noexcept
+    cdef void post_tick(self) except *
     cpdef void process_byte(self, uint8_t) except *
     cdef void process_byte_nogil(self, uint8_t) noexcept nogil
     cdef bint _consume_header(self, uint8_t) noexcept nogil

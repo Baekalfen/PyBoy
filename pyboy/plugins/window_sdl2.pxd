@@ -47,4 +47,4 @@ cdef class WindowSDL2(PyBoyWindowPlugin):
     cdef cython.double _get_sound_frames_buffered(self) noexcept
 
     @cython.locals(queued_bytes=int)
-    cpdef void post_tick(self) noexcept
+    cpdef void post_tick(self) except *

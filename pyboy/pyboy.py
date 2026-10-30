@@ -669,6 +669,7 @@ class PyBoy:
             bool: False if emulation has ended; otherwise True.
         Raises:
             PyBoyInvalidInputException: If `count` is not a non-negative integer.
+            Exception: Exceptions raised by plugins and windows during post-tick processing propagate to the caller.
         """
 
         if self.stopped:
@@ -751,7 +752,12 @@ class PyBoy:
             elif event == WindowEvent.UNPAUSE:
                 self._unpause()
             elif event == WindowEvent._INTERNAL_RENDERER_FLUSH:
-                self._plugin_manager._post_tick_windows()
+                # Runs inside the nogil tick loop, so unlike a regular post tick, the
+                # error cannot bubble up to the caller of tick().
+                try:
+                    self._plugin_manager._post_tick_windows()
+                except Exception as error:
+                    logger.error("Error flushing renderer windows: %s", error)
             elif event == WindowEvent.CYCLE_PALETTE:
                 self._cycle_palette()
             else:
