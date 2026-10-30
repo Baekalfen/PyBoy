@@ -99,7 +99,7 @@ cdef class TileViewWindow(BaseDebugWindow):
         bg_priority = uint8_t,
         color = int,
     )
-    cdef void post_tick(self) noexcept
+    cdef void post_tick(self) except *
 
     # scanlineparameters=uint8_t[:,:],
     @cython.locals(x=int, y=int, xx=int, yy=int, row=int, column=int, background_view=bint, t=MarkedTile)
@@ -115,7 +115,7 @@ cdef class TileDataWindow(BaseDebugWindow):
     # cdef uint8_t[:,:] tilecache # Fixing Cython locals
     cdef uint32_t[4] palette_rgb
     @cython.locals(t=int, xx=int, yy=int, color=int)
-    cdef void post_tick(self) noexcept
+    cdef void post_tick(self) except *
 
     @cython.locals(tile_x=int, tile_y=int, tile_identifier=int)
     cdef list handle_events(self, list)
@@ -137,11 +137,11 @@ cdef class SpriteWindow(BaseDebugWindow):
     # cdef uint8_t[:,:] spritecache # Fixing Cython locals
     cdef uint32_t[4] palette_rgb
     @cython.locals(color=int)
-    cdef void post_tick(self) noexcept
+    cdef void post_tick(self) except *
 
 cdef class SpriteViewWindow(BaseDebugWindow):
     @cython.locals(t=int, x=int, y=int)
-    cdef void post_tick(self) noexcept
+    cdef void post_tick(self) except *
 
     @cython.locals(
         spriteheight=int,
@@ -247,4 +247,4 @@ cdef class GameAreaWindow(BaseDebugWindow):
     cdef void update_title(self) noexcept
 
     cdef list handle_events(self, list)
-    cdef void post_tick(self) noexcept
+    cdef void post_tick(self) except *

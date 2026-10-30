@@ -94,7 +94,7 @@ cdef class PyBoy:
     cpdef void _pause(self) noexcept
     cpdef void _unpause(self) noexcept
     cdef void _update_window_title(self) noexcept
-    cdef void _post_tick(self) noexcept
+    cdef void _post_tick(self) except *
     cdef void _post_handle_events(self) noexcept with gil
 
     cdef dict _hooks
